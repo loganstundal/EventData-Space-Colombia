@@ -19,7 +19,7 @@
 #
 #         - Good refresher information on proj4string syntax here:
 #           https://mgimond.github.io/Spatial/coordinate-systems-in-r.html
-#    
+#
 #-----------------------------------------------------------------------------#
 
 
@@ -42,7 +42,7 @@ library(rmapshaper)
 #---------------------------#
 # Set working directory
 #---------------------------#
-setwd(paste('C:/Users/logan/GoogleDrive/UMN/RESEARCH/RA_JOHN/Event_Data_Project'))
+# setwd(paste('C:/Users/logan/GoogleDrive/UMN/RESEARCH/RA_JOHN/Event_Data_Project'))
 
 #---------------------------#
 # Load data
@@ -73,12 +73,12 @@ for(x in 1:6){
                  col_names = gnames_cnames,
                  col_types = paste(c('d','c','c','c','d','d','c','c','c','c',
                                      'c','c','c','c','d','d','d','c','D'), collapse = ''))
-  
+
   assign(x = paste0('gnames_',gnames_files[x]),
          value = tmp)
 };rm(x, gnames_cnames, gnames_files, tmp)
 
-gnames_SA <- bind_rows(gnames_CO, gnames_BR, gnames_EC, 
+gnames_SA <- bind_rows(gnames_CO, gnames_BR, gnames_EC,
                        gnames_PA, gnames_PE, gnames_VE)
 rm(gnames_BR, gnames_EC, gnames_PA, gnames_PE, gnames_VE)
 
@@ -88,14 +88,14 @@ rm(gnames_BR, gnames_EC, gnames_PA, gnames_PE, gnames_VE)
 # ----------------------------------- #
 # STEP 1 - simplify colombia geometry for more computationally efficient workflow
 colombia <- ms_simplify(colombia, keep = 0.01)
-colombia <- colombia %>% 
-  st_as_sf() %>% 
+colombia <- colombia %>%
+  st_as_sf() %>%
   st_transform(., crs = st_crs(prj))
 # ----------------------------------- #
 
 # ----------------------------------- #
 # STEP 2- Identify municipalities with an international border
-# Add a 1 km distance buffer to account for imperfect geometries 
+# Add a 1 km distance buffer to account for imperfect geometries
 # between simple features.
 
 # Re-project South America shapefile
@@ -109,10 +109,10 @@ border <- st_is_within_distance(x      = colombia,
 border <- border %>%
   as.data.frame() %>%
   mutate_if(is.logical, as.numeric) %>%
-  mutate(border_international = case_when(V1 == T | 
-                                          V2 == T | 
-                                          V3 == T | 
-                                          V4 == T | 
+  mutate(border_international = case_when(V1 == T |
+                                          V2 == T |
+                                          V3 == T |
+                                          V4 == T |
                                           V5 == T ~ 1,
                                           TRUE ~ 0)) %>%
   mutate(border_international = as_factor(border_international)) %>%
@@ -137,7 +137,7 @@ colombia <- colombia %>%
 
 # ----------------------------------- #
 # STEP 4 - Estimate municipality centroids.
-# This value will serve as both the input in the continuous models and will be used 
+# This value will serve as both the input in the continuous models and will be used
 # to estimate the distance_ variables
 # https://r-spatial.github.io/sf/reference/geos_unary.html
 
@@ -147,11 +147,11 @@ centroids_proj <- st_centroid(colombia)$geometry
 colombia$centroid_mun_proj <- centroids_proj
 
 # STEP 4.b - Estimate longitude and latitude for spde model
-centroids_longlat <- st_transform(centroids_proj, 
+centroids_longlat <- st_transform(centroids_proj,
                                   crs = "+proj=longlat +datum=WGS84") %>%
-  st_coordinates(.) %>% 
+  st_coordinates(.) %>%
   as.data.frame()   %>%
-  rename(centroid_mun_long = X, 
+  rename(centroid_mun_long = X,
          centroid_mun_lat  = Y)
 
 colombia <- colombia %>%
@@ -160,7 +160,7 @@ rm(centroids_longlat)
 # ----------------------------------- #
 
 # POINT LOCATIONS OF INTEREST -------------------------------------------------
-# Prep gnames object to build location of: 
+# Prep gnames object to build location of:
 #     - Department capitals
 #     - Population centers with at least 50,000 inhabitants.
 #     - Bogota
@@ -177,29 +177,29 @@ dept_capitals              <- st_transform(dept_capitals, prj)
 
 # Populated places [only Colombia]
 pop_50k_CO <- gnames_CO %>%
-  filter(feature_class == 'P', 
+  filter(feature_class == 'P',
          population >= 50e3) %>%    # city or village
   dplyr::select(name, alternate_name, latitude, longitude, population)
 
 coordinates(pop_50k_CO) <- c('longitude','latitude')
 pop_50k_CO              <- pop_50k_CO %>% st_as_sf()
 st_crs(pop_50k_CO)      <- "+proj=longlat +datum=WGS84"
-pop_50k_CO              <- st_transform(pop_50k_CO, crs = prj) 
+pop_50k_CO              <- st_transform(pop_50k_CO, crs = prj)
 
 # Populated places [Colombia and surrounding countries]
 pop_50k_SA <- gnames_SA %>%
-  filter(feature_class == 'P', 
+  filter(feature_class == 'P',
          population >= 50e3) %>%    # city or village
   dplyr::select(name, alternate_name, latitude, longitude, population)
 
 coordinates(pop_50k_SA) <- c('longitude','latitude')
 pop_50k_SA              <- pop_50k_SA %>% st_as_sf()
 st_crs(pop_50k_SA)      <- "+proj=longlat +datum=WGS84"
-pop_50k_SA              <- st_transform(pop_50k_SA, crs = prj) 
+pop_50k_SA              <- st_transform(pop_50k_SA, crs = prj)
 
 # Bogota
 bogota <- pop_50k_CO[which(pop_50k_CO$population>5e6),]
-rm(gnames_CO, gnames_SA)  
+rm(gnames_CO, gnames_SA)
 
 
 
@@ -217,7 +217,7 @@ dist_per <- as.numeric(dist_per / 1e3)
 colombia$distance_peru_km <- dist_per
 
 # DISTANCE: BRAZIL ------------------------------
-dist_bra <- st_distance(x = centroids_proj, 
+dist_bra <- st_distance(x = centroids_proj,
                         y = s_america[3,])
 dist_bra <- as.numeric(dist_bra / 1e3)
 colombia$distance_brazil_km <- dist_bra
@@ -236,7 +236,7 @@ colombia$distance_panama_km <- dist_pan
 
 # DISTANCE: INTERNATIONAL BORDER ----------------
 s_america   <- st_union(s_america)
-dist_border <- st_distance(x = centroids_proj, 
+dist_border <- st_distance(x = centroids_proj,
                            y = s_america)
 dist_border <- as.numeric(dist_border / 1e3)
 colombia$distance_int_border_km <- dist_border
@@ -265,7 +265,7 @@ dist_50k_SA <- dist_50k_SA / 1e3
 colombia$distance_50k_sa_km <- dist_50k_SA
 rm(dist_50k_SA, pop_50k_SA)
 
-# DEPARTMENT CAPITAL ------------------ 
+# DEPARTMENT CAPITAL ------------------
 dist_dept_capital <- st_distance(x = centroids_proj,
                                  y = dept_capitals)
 dist_dept_capital <- as.data.frame(as.matrix(dist_dept_capital)) %>%
@@ -286,7 +286,7 @@ rm(dist_bogota, bogota, centroids_proj, prj)
 
 # FINAL CLEANUP ---------------------------------------------------------------
 
-  
+
 # Save data frame from shapefile as a separate object for easier merging
 colombia <- colombia %>%
   mutate(ID = row_number(),
@@ -298,21 +298,21 @@ colombia <- colombia %>%
   dplyr::select(
     # Organization variables:
     ID_Mun, Department, Municipality,
-    
+
     # Municipality areas:
     km2, km2_ln,
-    
+
     # Border dummy variables:
-    border_ecuador, border_peru, border_brazil, 
+    border_ecuador, border_peru, border_brazil,
     border_venezuela, border_panama, border_international,
-    
+
     # Distance to borders:
     distance_ecuador_km, distance_peru_km, distance_brazil_km,
     distance_venezuela_km, distance_panama_km, distance_int_border_km,
-    
+
     # Distance to points-of-interest:
     distance_50k_co_km, distance_50k_sa_km, distance_dept_capital_km, distance_bogota_km,
-    
+
     # Coordintates:
     centroid_mun_proj, centroid_mun_long, centroid_mun_lat, geometry) %>%
   filter(ID_Mun != 88001) #'San Andres Y Providencia'

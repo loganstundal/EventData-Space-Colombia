@@ -1,0 +1,70 @@
+<table class=" lightable-classic" style="font-family: Cambria; margin-left: auto; margin-right: auto;">
+<caption>GED</caption>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> year </th>
+   <th style="text-align:right;"> mean </th>
+   <th style="text-align:right;"> n&gt;0 </th>
+   <th style="text-align:right;"> max </th>
+   <th style="text-align:right;"> sd </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2002 </td>
+   <td style="text-align:right;"> 0.108 </td>
+   <td style="text-align:right;"> 98 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 0.388 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2003 </td>
+   <td style="text-align:right;"> 0.033 </td>
+   <td style="text-align:right;"> 29 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 0.228 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2004 </td>
+   <td style="text-align:right;"> 0.026 </td>
+   <td style="text-align:right;"> 24 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 0.199 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2005 </td>
+   <td style="text-align:right;"> 0.014 </td>
+   <td style="text-align:right;"> 14 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.133 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2006 </td>
+   <td style="text-align:right;"> 0.022 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 0.173 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2007 </td>
+   <td style="text-align:right;"> 0.038 </td>
+   <td style="text-align:right;"> 28 </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 0.285 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2008 </td>
+   <td style="text-align:right;"> 0.017 </td>
+   <td style="text-align:right;"> 18 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.136 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> 2009 </td>
+   <td style="text-align:right;"> 0.020 </td>
+   <td style="text-align:right;"> 21 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.145 </td>
+  </tr>
+</tbody>
+</table>

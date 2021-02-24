@@ -1,18 +1,18 @@
 #-----------------------------------------------------------------------------#
-#                                                                             
-# Author:        Logan Stundal                                                    
-# Date:          March 21, 2020                                                 
-# Purpose:       Extimate spatial error probit models                      
-#                                                                             
 #
-# Copyright (c): Logan Stundal, 2020                      
+# Author:        Logan Stundal
+# Date:          March 21, 2020
+# Purpose:       Extimate spatial error probit models
+#
+#
+# Copyright (c): Logan Stundal, 2020
 # Email:         stund005@umn.edu
 #
-#-----------------------------------------------------------------------------# 
+#-----------------------------------------------------------------------------#
 #
-# Notes:                                                                    
-#                                                                             
-#                                                                             
+# Notes:
+#
+#
 #-----------------------------------------------------------------------------#
 
 
@@ -20,12 +20,12 @@
 # ADMINISTRATIVE --------------------------------------------------------------
 
 #---------------------------#
-# Clear working directory   
+# Clear working directory
 #---------------------------#
 rm(list = ls())
 
 #---------------------------#
-# Load required libraries   
+# Load required libraries
 #---------------------------#
 library(tidyverse)
 library(sf)
@@ -33,18 +33,18 @@ library(ProbitSpatial)
 library(spdep)
 
 #---------------------------#
-# Set working directory     
+# Set working directory
 #---------------------------#
-setwd('c:/users/logan/googledrive/umn/research/ra_john/event_data_project')
+# setwd('c:/users/logan/googledrive/umn/research/papers/eventdata-space-colombia')
 
 #---------------------------#
-# Load data                 
+# Load data
 #---------------------------#
 load('data/Colombia.Rdata')
 # rm(list = setdiff(ls(),'colombia'))
 
 #---------------------------#
-# Load functions            
+# Load functions
 #---------------------------#
 source('scripts/Functions_EDP.R')
 
@@ -132,8 +132,8 @@ se_probits_events.pvals <- lapply(1:length(dvs_events), function(x){
 se_probits_events.lliks <- lapply(se_probits_events, function(x){c(round(x@loglik,3))})
 
 se_probits_events_df <- lapply(1:length(dvs_events), function(x){
-  as.data.frame(cbind(se_probits_events.coefs[[x]], 
-                      se_probits_events.ses[[x]], 
+  as.data.frame(cbind(se_probits_events.coefs[[x]],
+                      se_probits_events.ses[[x]],
                       se_probits_events.pvals[[x]]))
 })
 
@@ -142,7 +142,7 @@ se_probits_events_df <- lapply(1:length(dvs_events), function(x){
 # for(i in 1:length(mods)){
 #   colnames(mods[[i]]) = c('point','se','pval')
 # };rm(i)
-# 
+#
 # reg_table(models    = mods,
 #           se.size   = 'footnotesize',
 #           mod_names = rep(c('ICEWS','GED','CINEP')),
@@ -156,7 +156,7 @@ se_probits_events_df <- lapply(1:length(dvs_events), function(x){
 #       data    = colombia,
 #       family  = binomial(link = 'probit'))
 # })
-# 
+#
 # vanilla_probits_under.coefs <- lapply(1:length(vanilla_probits_under), function(x){
 #   coef(vanilla_probits_under[[x]])})
 # vanilla_probits_under.ses   <- lapply(1:length(vanilla_probits_under), function(x){
@@ -165,10 +165,10 @@ se_probits_events_df <- lapply(1:length(dvs_events), function(x){
 #   2 * (1 - pnorm(abs(coef(vanilla_probits_under[[x]]))/vanilla_probits_under.ses[[x]]))})
 # vanilla_probits_under.lliks <- lapply(1:length(vanilla_probits_under), function(x){
 #   logLik(vanilla_probits_under[[x]])})
-# 
+#
 # vanilla_probits_under <- lapply(1:length(vanilla_probits_under), function(x){
-#   as.data.frame(cbind(vanilla_probits_under.coefs[[x]], 
-#                       vanilla_probits_under.ses[[x]], 
+#   as.data.frame(cbind(vanilla_probits_under.coefs[[x]],
+#                       vanilla_probits_under.ses[[x]],
 #                       vanilla_probits_under.pvals[[x]]))
 # })
 # rm(vanilla_probits_under.coefs,
@@ -197,8 +197,8 @@ se_probits_under.pvals <- lapply(1:length(dvs_under), function(x){
 se_probits_under.lliks <- lapply(se_probits_under, function(x){c(round(x@loglik,3))})
 
 se_probits_under_df <- lapply(1:length(dvs_under), function(x){
-  as.data.frame(cbind(se_probits_under.coefs[[x]], 
-                      se_probits_under.ses[[x]], 
+  as.data.frame(cbind(se_probits_under.coefs[[x]],
+                      se_probits_under.ses[[x]],
                       se_probits_under.pvals[[x]]))
 })
 
@@ -206,7 +206,7 @@ se_probits_under_df <- lapply(1:length(dvs_under), function(x){
 # for(i in 1:length(mods)){
 #   colnames(mods[[i]]) = c('point','se','pval')
 # };rm(i)
-# 
+#
 # reg_table(models    = mods,
 #           se.size   = 'footnotesize',
 #           mod_names = rep(c('ICEWS','CINEP')),
