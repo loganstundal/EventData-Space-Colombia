@@ -80,7 +80,7 @@ nl <- read_csv("data/covariates/Colombia_NightLights_municipality_Panel.csv") %>
 
 # First submission draft years: seq(2002,2009)
 # Set years here for ease:
-yr_min <- 2000
+yr_min <- 2002
 yr_max <- 2009
 
 # ----------------------------------- #
@@ -113,10 +113,10 @@ rm(forest, pop, tri, nl)
 event_farc <- event_farc %>%
   replace(is.na(.), 0) %>%
   dplyr::select(year,latitude,longitude, sort(names(.))) %>%
-  mutate(icews_farc       = rebcivicews + rebcivicews,
-         # icews_farc_stand = rebcivicewsstand + rebgovicewsstand,
-         ged_farc         = rebcivged + rebgovged,
-         # ged_farc_stand   = rebcivgedstand + rebgovgedstand
+  mutate(icews = rebcivicews + rebgovicews,
+         # icews_stand = rebcivicewsstand + rebgovicewsstand,
+         ged   = rebcivged + rebgovged,
+         # ged_stand   = rebcivgedstand + rebgovgedstand
          ) %>%
   dplyr::select(latitude, longitude, year,
                 starts_with(c("icews","ged"))) %>%
@@ -145,26 +145,32 @@ events <- st_join(x    = event_farc,
                   y    = colombia,
                   join = st_intersects)
 
-out_of_bounds <- events[is.na(events$ID_Mun),]
+# out_of_bounds <- events[is.na(events$ID_Mun),]
+#
+# events2 <- st_join(x    = out_of_bounds %>% select(year, starts_with(c("icews","ged"))),
+#                    y    = colombia,
+#                    join = st_is_within_distance,
+#                    dist = 1e3) %>%
+#   drop_na(ID_Mun)
 
-events2 <- st_join(x    = out_of_bounds %>% select(year, starts_with(c("icews","ged"))),
-                   y    = colombia,
-                   join = st_is_within_distance,
-                   dist = 1e3) %>%
-  drop_na(ID_Mun)
+# Note - per above there are 25 events outside Colombia borders in the raw data.
+# only 4 of these are within 1 km of Colomiia. Each of these 4 have 0 reported
+# ICEWS or GED reported events. So, commenting-out the out-of-bounds code here.
 
-# This ultimately makes little difference - all DVs coded as 0; clean up later or remove.
-
+# ----------------------------------- #
+# Summarize spatial intersection - sum of events per municipality per year
+# ----------------------------------- #
 events <- events %>%
   drop_na(ID_Mun) %>%
-  bind_rows(., events2) %>%
+  # bind_rows(., events2) %>%
   select(ID_Mun, year, starts_with(c("icews","ged"))) %>%
   group_by(year, ID_Mun) %>%
   summarize(across(starts_with(c("icews","ged")), sum))
+# ----------------------------------- #
 
-rm(out_of_bounds, events2, event_farc)
+rm(event_farc)
 
-# sapply(events[3:6], function(x){summary(x)})
+# sapply(events[3:4], function(x){summary(x)})
 # sapply(events,      function(x){table(is.na(x))})
 # ----------------------------------- #
 
@@ -173,35 +179,11 @@ rm(out_of_bounds, events2, event_farc)
 # Event Data - CINEP
 # ----------------------------------- #
 cinep <- cinep %>%
-  rename(ID_Mun     = id_2,
-         cinep_farc = CINEP_hrv) %>%
-  dplyr::select(ID_Mun, year, cinep_farc) %>%
+  rename(ID_Mun = id_2,
+         cinep  = CINEP_hrv) %>%
+  dplyr::select(ID_Mun, year, cinep) %>%
   filter(year >= yr_min, year <= yr_max)
 # ----------------------------------- #
-
-
-#-----------------------------------------------------------------------------#
-# NOTE - I really really fucked the dv up in the first draft...
-# cinep_new <- cinep %>%
-#   group_by(id_2) %>%
-#   summarise(cinep_farc = sum(CINEP_hrv),
-#             year       = year[1]) %>%
-#   rename(ID_Mun = id_2)
-#
-#
-# cinep_old <- cinep %>%
-#   group_by(id_2) %>%
-#   summarise(cinep_farc = n(),
-#             year       = year[1]) %>%
-#   rename(ID_Mun = id_2)
-#
-# tst <- data.frame(x = rep(1:3, each = 4),
-#                   y = sample(1:3, size = 12, replace = T))
-# tst %>%
-#   group_by(x) %>%
-#   summarize(test = sum(y),
-#             old  = n())
-#-----------------------------------------------------------------------------#
 
 
 
@@ -244,27 +226,24 @@ colombia <- colombia %>%
          bogota_dummy = ifelse(Department == 'Bogota D.C.', 1, 0),
 
          # Binary outcomes
-         icews_farc_bin    = as.integer(icews_farc > 0),
-         ged_farc_bin      = as.integer(ged_farc > 0),
-         cinep_farc_bin    = as.integer(cinep_farc > 0)) %>%
+         icews_bin    = as.integer(icews > 0),
+         ged_bin      = as.integer(ged   > 0),
+         cinep_bin    = as.integer(cinep > 0)) %>%
 
-  mutate(icews_cinep_under = case_when(icews_farc_bin == 0 & cinep_farc_bin == 1 ~ 1, TRUE ~ 0),
-         icews_cinep_bias  = case_when(icews_farc_bin != cinep_farc_bin ~ 1, TRUE ~ 0),
+  mutate(icews_cinep_under = case_when(icews_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
 
-         ged_cinep_under   = case_when(ged_farc_bin == 0 & cinep_farc_bin == 1 ~ 1, TRUE ~ 0),
-         ged_cinep_bias    = case_when(ged_farc_bin != cinep_farc_bin ~ 1, TRUE ~ 0),
-
-         icews_ged_under   = case_when(icews_farc_bin == 0 & ged_farc_bin == 1 ~ 1, TRUE ~ 0),
-         icews_ged_bias    = case_when(icews_farc_bin != ged_farc_bin ~ 1, TRUE ~ 0),
+         ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0),
 
          # Factors for mapping
-         icews_bias_fct = as_factor(case_when(icews_farc_bin == 0 & cinep_farc_bin == 1 ~ 'Underreport',
-                                              icews_farc_bin == 1 & cinep_farc_bin == 0 ~ 'Overreport',
-                                              icews_farc_bin == cinep_farc_bin ~ 'Agree')),
+         icews_bias_fct = as_factor(case_when(icews_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                              icews_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                              icews_bin == cinep_bin          ~ 'Agree')),
 
-         ged_bias_fct = as_factor(case_when(ged_farc_bin == 0 & cinep_farc_bin == 1 ~ 'Underreport',
-                                            ged_farc_bin == 1 & cinep_farc_bin == 0 ~ 'Overreport',
-                                            ged_farc_bin == cinep_farc_bin ~ 'Agree'))) %>%
+         ged_bias_fct = as_factor(case_when(ged_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                            ged_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                            ged_bin == cinep_bin          ~ 'Agree'))) %>%
   mutate(icews_bias_fct = suppressWarnings({fct_relevel(icews_bias_fct,
                                                         levels = c("Underreport", "Overreport", "Agree"))}),
          ged_bias_fct   = suppressWarnings({fct_relevel(ged_bias_fct,
