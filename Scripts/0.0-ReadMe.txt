@@ -1,0 +1,67 @@
+#-----------------------------------------------------------------------------#
+Logan Stundal
+February 25, 2021
+
+This document explains the order-of-operations to execute the scriptes to
+replicate all analysis in the paper / appendix as well as procude all figures
+and tables.
+
+Additionally, data imports and data exports are noted for each script.
+#-----------------------------------------------------------------------------#
+
+1.0: Spatial Admin
+  - Purpose: Prepares a simple features spatial object to hold all data for
+             and analysis. As well, static geography variables such as
+             distance from Bogota are estimated in this script.
+  - Imports: col_admbnda_adm2_unodc_ocha.shp
+  - Exports: colombia_admin.RData
+
+# ----------------------------------- #
+
+2.0: Data Tidy
+  - Purpose: Organizes all variables used in models: event data, independent
+             and control variables. Constructs a panel.
+  - Imports: colombia_admin.RData
+             gedicews_FARC_20190908.csv
+             CINEP_HRV_Farc.dta
+             Colombia_ForestCover_municipality_Panel.csv
+             Colombia_Population_municipality_Panel.csv
+             Colombia_tri_municipality_mean.csv
+             Colombia_NightLights_municipality_Panel.csv
+  - Exports: data_analysis.RData
+
+# ----------------------------------- #
+
+2.1: Spatial Tidy
+  - Purpose: Collects and organize spatial data used in models (spatial
+             weights) or in figures (Colombia Admin 0 shapefile).
+  - Imports:
+  - Exports: data_spatial.Rdata
+
+# ----------------------------------- #
+
+3.0: EDA
+  - Purpose:
+  - Imports:
+  - Exports:
+
+# ----------------------------------- #
+
+4.0: Analysis - Discrete
+  - Purpose:
+  - Imports:
+  - Exports:
+
+# ----------------------------------- #
+
+x.x: xyz
+  - Purpose:
+  - Imports:
+  - Exports:
+
+# ----------------------------------- #
+
+x.x: xyz
+  - Purpose:
+  - Imports:
+  - Exports:
