@@ -11,7 +11,8 @@
 #-----------------------------------------------------------------------------#
 #
 # Notes:
-#
+#  This organizes the spatial simple features object used to organize both
+#  data employed in models as well as spatial mapping data.
 #
 #-----------------------------------------------------------------------------#
 
@@ -36,8 +37,7 @@ library(rmapshaper)
 #---------------------------#
 # Load data
 #---------------------------#
-colombia  <- read_sf(paste0("data/administrative_units/",
-                            "col_admbnda_adm2_unodc_ocha/",
+colombia  <- read_sf(paste0("data/administrative-units/",
                             "col_admbnda_adm2_unodc_ocha.shp"))
 
 
@@ -57,7 +57,7 @@ colombia <- ms_simplify(colombia, keep = 0.01)
 # Correct invalid geometry
 # ----------------------------------- #
 colombia <- st_make_valid(colombia) %>%
-  suppressWarnings({st_cast(to   = "MULTIPOLYGON")})
+  st_cast(to   = "MULTIPOLYGON")
 
 
 # ----------------------------------- #

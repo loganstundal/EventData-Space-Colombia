@@ -6,14 +6,16 @@ This document explains the order-of-operations to execute the scriptes to
 replicate all analysis in the paper / appendix as well as procude all figures
 and tables.
 
-Additionally, data imports and data exports are noted for each script.
+Additionally, data imports and data exports are noted for each script. All
+imported and exported data files are stored in the Data/ directory unless
+noted otherwise.
 #-----------------------------------------------------------------------------#
 
 1.0: Spatial Admin
   - Purpose: Prepares a simple features spatial object to hold all data for
              and analysis. As well, static geography variables such as
              distance from Bogota are estimated in this script.
-  - Imports: col_admbnda_adm2_unodc_ocha.shp
+  - Imports: Administrative-Units/col_admbnda_adm2_unodc_ocha.shp
   - Exports: colombia_admin.RData
 
 # ----------------------------------- #
@@ -22,20 +24,22 @@ Additionally, data imports and data exports are noted for each script.
   - Purpose: Organizes all variables used in models: event data, independent
              and control variables. Constructs a panel.
   - Imports: colombia_admin.RData
-             gedicews_FARC_20190908.csv
-             CINEP_HRV_Farc.dta
-             Colombia_ForestCover_municipality_Panel.csv
-             Colombia_Population_municipality_Panel.csv
-             Colombia_tri_municipality_mean.csv
-             Colombia_NightLights_municipality_Panel.csv
-  - Exports: data_analysis.RData
+             event_data/gedicews_FARC_20190908.csv
+             event_data/CINEP_HRV_Farc.dta
+             covariates/Colombia_ForestCover_municipality_Panel.csv
+             covariates/Colombia_Population_municipality_Panel.csv
+             covariates/Colombia_tri_municipality_mean.csv
+             covariates/Colombia_NightLights_municipality_Panel.csv
+  - Exports: data_variables.RData
 
 # ----------------------------------- #
 
 2.1: Spatial Tidy
   - Purpose: Collects and organize spatial data used in models (spatial
              weights) or in figures (Colombia Admin 0 shapefile).
-  - Imports:
+  - Imports: https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_COL_0_sf.rds,
+                  - Colombia; Level-0 shapefile for mapping
+             data_variables.RData
   - Exports: data_spatial.Rdata
 
 # ----------------------------------- #
