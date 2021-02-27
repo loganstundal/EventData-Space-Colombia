@@ -46,17 +46,42 @@ noted otherwise.
 
 3.0: EDA
   - Purpose:
-  - Imports:
+  - Imports: data_variables.RData
+  - Exports:
+
+# ----------------------------------- #
+
+3.1: Plots - Raw Data
+  - Purpose:
+  - Imports: data_variables.RData
   - Exports:
 
 # ----------------------------------- #
 
 4.0: Analysis - Discrete
   - Purpose:
+  - Imports: data_variables.RData
+             data_spatial.RData
+  - Exports:
+
+# ----------------------------------- #
+
+4.1: Analysis - Continuous
+  - Purpose:
+  - Imports: data_variables.RData
+             data_spatial.RData
+  - Exports:
+
+# ----------------------------------- #
+
+5.0: Plots - Model Outputs
+  - Purpose:
   - Imports:
   - Exports:
 
 # ----------------------------------- #
+
+#-----------------------------------------------------------------------------#
 
 x.x: xyz
   - Purpose:

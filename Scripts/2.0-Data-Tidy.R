@@ -40,32 +40,32 @@ library(sp)
 load('data/colombia_admin.rdata')
 
 # Event data
-event_farc  <- read_csv('data/event_data/gedicews_FARC_20190908.csv',
+event_farc  <- read_csv('data/event-data/gedicews_FARC_20190908.csv',
                         col_types = cols(.default = "d"))
-cinep       <- haven::read_dta('data/event_data/CINEP/CINEP_HRV_Farc.dta')
+cinep       <- haven::read_dta('data/event-data/CINEP_HRV_Farc.dta')
 
 # Covariates
-{forest      <- read_csv('data/covariate_data/googleearthengine/Colombia_ForestCover_municipality_Panel.csv') %>%
+{forest      <- read_csv('data/covariates/Colombia_ForestCover_municipality_Panel.csv') %>%
   dplyr::select(YEAR, admin2Pcod, mean) %>%
   rename(year   = YEAR,
          ID_Mun = admin2Pcod,
          google_ee_forest_per = mean) %>%
   mutate(ID_Mun = as.numeric(str_remove_all(ID_Mun, 'CO')))
 
-pop <- read_csv('data/covariate_data/googleearthengine/Colombia_Population_municipality_Panel.csv') %>%
+pop <- read_csv('data/covariates/Colombia_Population_municipality_Panel.csv') %>%
   dplyr::select(YEAR, admin2Pcod, sum) %>%
   rename(year   = YEAR,
          ID_Mun = admin2Pcod,
          google_ee_pop_sum = sum) %>%
   mutate(ID_Mun = as.numeric(str_remove_all(ID_Mun, 'CO')))
 
-tri <- read_csv('data/covariate_data/googleearthengine/Colombia_tri_municipality_mean.csv') %>%
+tri <- read_csv('data/covariates/Colombia_tri_municipality_mean.csv') %>%
   dplyr::select(admin2Pcod, mean) %>%
   rename(ID_Mun = admin2Pcod,
          google_terrain_ri_mean_m = mean) %>%
   mutate(ID_Mun = as.numeric(str_remove_all(ID_Mun, 'CO')))
 
-nl <- read_csv("data/covariate_data/googleearthengine/Colombia_NightLights_municipality_Panel.csv") %>%
+nl <- read_csv("data/covariates/Colombia_NightLights_municipality_Panel.csv") %>%
   dplyr::select(YEAR, admin2Pcod, NL) %>%
   rename(year = YEAR,
          ID_Mun = admin2Pcod,
@@ -114,12 +114,12 @@ event_farc <- event_farc %>%
   replace(is.na(.), 0) %>%
   dplyr::select(year,latitude,longitude, sort(names(.))) %>%
   mutate(icews_farc       = rebcivicews + rebcivicews,
-         icews_farc_stand = rebcivicewsstand + rebgovicewsstand,
+         # icews_farc_stand = rebcivicewsstand + rebgovicewsstand,
          ged_farc         = rebcivged + rebgovged,
-         ged_farc_stand   = rebcivgedstand + rebgovgedstand) %>%
+         # ged_farc_stand   = rebcivgedstand + rebgovgedstand
+         ) %>%
   dplyr::select(latitude, longitude, year,
-                icews_farc, icews_farc_stand,
-                ged_farc, ged_farc_stand) %>%
+                starts_with(c("icews","ged"))) %>%
   filter(year >= yr_min, year <= yr_max)
 
 coordinates(event_farc) <- c("longitude","latitude")
@@ -153,7 +153,7 @@ events2 <- st_join(x    = out_of_bounds %>% select(year, starts_with(c("icews","
                    dist = 1e3) %>%
   drop_na(ID_Mun)
 
-# This ultimately makes little difference - all DVs coded as 0
+# This ultimately makes little difference - all DVs coded as 0; clean up later or remove.
 
 events <- events %>%
   drop_na(ID_Mun) %>%
@@ -228,10 +228,7 @@ colombia <- colombia %>%
   left_join(., events, by = c("year","ID_Mun")) %>%
   left_join(., ge,     by = c("year","ID_Mun")) %>%
   mutate(across(starts_with(c("cinep","icews","ged")),
-                ~replace_na(.x, 0))) %>%
-  select(ID_Mun, Department, Municipality, year,
-         starts_with(c("cinep","icews","ged")),
-         everything())
+                ~replace_na(.x, 0)))
 
 rm(yr_min, yr_max, cinep, events, ge)
 #-----------------------------------------------------------------------------#
@@ -239,12 +236,18 @@ rm(yr_min, yr_max, cinep, events, ge)
 
 
 #-----------------------------------------------------------------------------#
-# BINARY OUTCOMES                                                         ----
+# BINARY OUTCOMES, BOGOTA DUMMY, & COLUMN ORDERING                        ----
 #-----------------------------------------------------------------------------#
 colombia <- colombia %>%
-  mutate(icews_farc_bin    = as.integer(icews_farc > 0),
+  mutate(
+         # Bogota dummy
+         bogota_dummy = ifelse(Department == 'Bogota D.C.', 1, 0),
+
+         # Binary outcomes
+         icews_farc_bin    = as.integer(icews_farc > 0),
          ged_farc_bin      = as.integer(ged_farc > 0),
          cinep_farc_bin    = as.integer(cinep_farc > 0)) %>%
+
   mutate(icews_cinep_under = case_when(icews_farc_bin == 0 & cinep_farc_bin == 1 ~ 1, TRUE ~ 0),
          icews_cinep_bias  = case_when(icews_farc_bin != cinep_farc_bin ~ 1, TRUE ~ 0),
 
@@ -262,20 +265,20 @@ colombia <- colombia %>%
          ged_bias_fct = as_factor(case_when(ged_farc_bin == 0 & cinep_farc_bin == 1 ~ 'Underreport',
                                             ged_farc_bin == 1 & cinep_farc_bin == 0 ~ 'Overreport',
                                             ged_farc_bin == cinep_farc_bin ~ 'Agree'))) %>%
-  mutate(icews_bias_fct = fct_relevel(icews_bias_fct, levels = c("Underreport", "Overreport", "Agree")),
-         ged_bias_fct   = fct_relevel(ged_bias_fct,   levels = c("Underreport", "Overreport", "Agree")))
-
-
-
+  mutate(icews_bias_fct = suppressWarnings({fct_relevel(icews_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))}),
+         ged_bias_fct   = suppressWarnings({fct_relevel(ged_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))})) %>%
+  # Arrange columns
+  select(ID_Mun, Department, Municipality, year,
+         starts_with(c("cinep","icews","ged")),
+         sort(names(.)))
 #-----------------------------------------------------------------------------#
-# BOGOTA DUMMY                                                            ----
-#-----------------------------------------------------------------------------#
-colombia <- colombia %>%
-  mutate(bogota_dummy = ifelse(Department == 'Bogota D.C.', 1, 0))
+
 
 
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-save(colombia, file = "data/data_analysis.RData")
+save(colombia, file = "data/data_variables.RData")
 rm(list = ls())

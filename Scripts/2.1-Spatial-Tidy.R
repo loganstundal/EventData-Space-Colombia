@@ -30,109 +30,75 @@ rm(list = ls())
 #---------------------------#
 # Load required packages
 #---------------------------#
-library()
-
-#---------------------------#
-# Set working directory
-#---------------------------#
-setwd()
+library(tidyverse)
+library(sf)
+library(spdep)
 
 #---------------------------#
 # Load data
 #---------------------------#
+colombia0 <- read_rds(url('https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_COL_0_sf.rds'))
+load("data/data_variables.Rdata")
 
 
 
 #-----------------------------------------------------------------------------#
-# TIDY DATA                                                               ----
+# SPATIAL WEIGHTS                                                         ----
 #-----------------------------------------------------------------------------#
 
+# ----------------------------------- #
+# Single cross-section
+# ----------------------------------- #
+colombia <- colombia %>%
+  filter(year == 2000) %>%
+  select(ID_Mun, Department, Municipality)
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Spatial weights
+# ----------------------------------- #
+# Create a spatial polygons dataframe to pass to 'poly2nb':
+colombia.shp <- colombia[,c('ID_Mun','geometry')]
+colombia.shp <- as_Spatial(from = colombia.shp,
+                           IDs  = colombia.shp$ID_Mun)
+
+# QUEEN - Spatial neighbors, matrix and lists:
+nb.r.queen   <- poly2nb(pl        = colombia.shp,
+                        row.names = colombia.shp$ID_Mun,
+                        queen     = TRUE)
+nb.queen.lst <- nb2listw(nb.r.queen)
+nb.queen.mat <- nb2mat(neighbours = nb.r.queen,
+                       style      = "W")
+colnames(nb.queen.mat) <- rownames(nb.queen.mat)
+
+# ROOK - Spatial neighbors, matrix and lists:
+nb.r.rook  <- poly2nb(pl        = colombia.shp,
+                      row.names = colombia.shp$ID_Mun,
+                      queen     = FALSE)
+nb.rook.lst <- nb2listw(nb.r.rook)
+nb.rook.mat <- nb2mat(neighbours = nb.r.rook,
+                        style      = "W")
+colnames(nb.rook.mat) <- rownames(nb.rook.mat)
+
+rm(colombia.shp, nb.r.queen, nb.r.rook)
+# ----------------------------------- #
+
+
 
 #-----------------------------------------------------------------------------#
-# ANALYSIS                                                                ----
+# TIDY: LEVEL-0                                                           ----
 #-----------------------------------------------------------------------------#
+colombia0 <- st_transform(colombia0, crs = st_crs(colombia)) %>%
+  st_crop(., st_bbox(colombia))
+
 
 
 #-----------------------------------------------------------------------------#
-# SAVE                                                                    ----
+# SAVE & CLEAN-UP                                                         ----
 #-----------------------------------------------------------------------------#
-#save.image()
-#rm(list = ls())
+rm(colombia)
 
-
-
-
-
-
-
-
-
-
-
-
-# _____________________ ----
-# COLOMBIA LEVEL 0 ------------------------------------------------------------
-# colombia0 <- read_rds(url('https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_COL_0_sf.rds'))
-# colombia0 <- st_transform(colombia0, crs = st_crs(colombia))
-#
-# colombia0 <- st_crop(x = colombia0,
-#                      y = st_bbox(colombia))
-#
-# # SPATIAL WEIGHTS -------------------------------------------------------------
-# library(spdep)
-#
-# # Create a spatial polygons dataframe to pass to 'poly2nb':
-# colombia.shp <- colombia[,c('ID_Mun','geometry')]
-# colombia.shp$centroid_mun_proj <- NULL
-# colombia.shp <- st_set_geometry(colombia.shp, colombia.shp$geometry)
-# colombia.shp <- as_Spatial(from = colombia.shp,
-#                            IDs  = colombia.shp$ID_Mun)
-#
-# # QUEEN - Spatial neighbors, matrix and lists:
-# nb.r.queen     <- poly2nb(pl        = colombia.shp,
-#                           row.names = colombia.shp$ID_Mun,
-#                           queen     = TRUE)
-# nb.lst.queen   <- nb2listw(nb.r.queen)
-# W_matrix.queen <- nb2mat(neighbours = nb.r.queen,
-#                          style      = "W")
-# colnames(W_matrix.queen) <- rownames(W_matrix.queen)
-#
-# # ROOK - Spatial neighbors, matrix and lists:
-# nb.r.rook     <- poly2nb(pl        = colombia.shp,
-#                          row.names = colombia.shp$ID_Mun,
-#                          queen     = FALSE)
-# nb.lst.rook   <- nb2listw(nb.r.rook)
-# W_matrix.rook <- nb2mat(neighbours = nb.r.rook,
-#                         style      = "W")
-# colnames(W_matrix.rook) <- rownames(W_matrix.rook)
-#
-# rm(colombia.shp)
-#
-# # _____________________ ----
-# # SAVE ------------------------------------------------------------------------
-#
-#
-# # CSV file for sharing with Ben and John
-# write_csv(x    = colombia,
-#           path = 'data/colombia.csv')
-#
-# # Rdata file for future modeling
-# save.image(file = 'data/colombia.Rdata')
-# rm(list=ls())
-#
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+save.image(file = "data/data_spatial.RData")
+rm(list = ls())
 
