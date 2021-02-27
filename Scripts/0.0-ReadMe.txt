@@ -1,14 +1,14 @@
 #-----------------------------------------------------------------------------#
-Logan Stundal
-February 25, 2021
+Author  : Logan Stundal
+Date    : February 25, 2021
 
-This document explains the order-of-operations to execute the scriptes to
-replicate all analysis in the paper / appendix as well as procude all figures
+Purpose :
+This document explains the order-of-operations in which to execute scripts that
+replicate all analysis in the paper / appendix as well as produce all figures
 and tables.
 
 Additionally, data imports and data exports are noted for each script. All
-imported and exported data files are stored in the Data/ directory unless
-noted otherwise.
+imported and exported data files are stored in the Data/ directory.
 #-----------------------------------------------------------------------------#
 
 1.0: Spatial Admin
@@ -45,13 +45,18 @@ noted otherwise.
 # ----------------------------------- #
 
 3.0: EDA
-  - Purpose:
+  - Purpose: Perform exploratory analysis on data including identifying
+             municipalities with greatest FARC activity, estimating
+             Cohen's Kappa, and confusion matricies as well as summary
+             statistics.
   - Imports: data_variables.RData
-  - Exports:
+  - Exports: data_variables.RData
+                - Adds colombia_cs [cross-section] and colombia_grp [year grouped]
+                  data frames to colombia [panel]
 
 # ----------------------------------- #
 
-3.1: Plots - Raw Data
+3.1: EDA - Maps
   - Purpose:
   - Imports: data_variables.RData
   - Exports:
@@ -81,7 +86,19 @@ noted otherwise.
 
 # ----------------------------------- #
 
+6.0: Appendix - Supplemental Appendix output
+  - Purpose:
+  - Imports:
+  - Exports:
+
+# ----------------------------------- #
+
 #-----------------------------------------------------------------------------#
+
+
+
+
+
 
 x.x: xyz
   - Purpose:
@@ -90,7 +107,7 @@ x.x: xyz
 
 # ----------------------------------- #
 
-x.x: xyz
-  - Purpose:
-  - Imports:
-  - Exports:
+
+
+
+
