@@ -22,7 +22,8 @@ imported and exported data files are stored in the Data/ directory.
 
 2.0: Data Tidy
   - Purpose: Organizes all variables used in models: event data, independent
-             and control variables. Constructs a panel.
+             and control variables. Construct panel, grouped-years, and
+             cross-section data structures
   - Imports: colombia_admin.RData
              event_data/gedicews_FARC_20190908.csv
              event_data/CINEP_HRV_Farc.dta
@@ -31,6 +32,9 @@ imported and exported data files are stored in the Data/ directory.
              covariates/Colombia_tri_municipality_mean.csv
              covariates/Colombia_NightLights_municipality_Panel.csv
   - Exports: data_variables.RData
+                  - colombia_pn [full panel]
+                  - colombia_yg [years, grouped]
+                  - colombia_cs [cross section]
 
 # ----------------------------------- #
 
@@ -50,9 +54,7 @@ imported and exported data files are stored in the Data/ directory.
              Cohen's Kappa, and confusion matricies as well as summary
              statistics.
   - Imports: data_variables.RData
-  - Exports: data_variables.RData
-                - Adds colombia_cs [cross-section] and colombia_grp [year grouped]
-                  data frames to colombia [panel]
+  - Exports: NA
 
 # ----------------------------------- #
 

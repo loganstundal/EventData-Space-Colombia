@@ -111,7 +111,7 @@ d <- str_remove_all(Sys.Date(),"-")
 # ----------------------------------- #
 # Subset and tidy data for mapping
 # ----------------------------------- #
-active_farc <- colombia %>%
+active_farc <- colombia_pn %>%
   st_drop_geometry() %>%
   mutate(popden = pop_sum / area_km2) %>%
   group_by(Department, Municipality) %>%
@@ -160,7 +160,7 @@ active_farc[,1:6] %>% kbl(format = "pipe", digits = 2)
 # ----------------------------------- #
 # Most active - map
 # ----------------------------------- #
-active_farc <- colombia %>%
+active_farc <- colombia_pn %>%
   filter(year == 2002) %>%
   select(Department, Municipality) %>%
   left_join(., active_farc, by = c("Department", "Municipality"))
@@ -197,13 +197,13 @@ rm(active_farc, mp)
 #-----------------------------------------------------------------------------#
 # COHEN'S KAPPA - YEARLY                                                  ----
 #-----------------------------------------------------------------------------#
-yrs <- sort(unique(colombia$year))
+yrs <- sort(unique(colombia_pn$year))
 
 # ----------------------------------- #
 # Kappa by year - ICEWS
 # ----------------------------------- #
 icews <- sapply(yrs, function(x){
-  tmp <- colombia %>% filter(year == x)
+  tmp <- colombia_pn %>% filter(year == x)
   return(kappa_cm(observed = tmp$cinep_bin,
                   p_bin    = tmp$icews_bin))
 }, simplify = FALSE)
@@ -219,7 +219,7 @@ icews <- bind_rows(icews) %>%
 # Kappa by year - GED
 # ----------------------------------- #
 ged <- sapply(yrs, function(x){
-  tmp <- colombia %>% filter(year == x)
+  tmp <- colombia_pn %>% filter(year == x)
   return(kappa_cm(observed = tmp$cinep_bin,
                   p_bin    = tmp$ged_bin))
 }, simplify = FALSE)
@@ -271,36 +271,13 @@ rm(icews, ged, plt_dat, plt, yrs)
 # COHEN'S KAPPA - GROUPED YEARS                                           ----
 #-----------------------------------------------------------------------------#
 
-
-# ----------------------------------- #
-# Setup time groups
-# ----------------------------------- #
-colombia_grp <- colombia %>%
-  st_drop_geometry() %>%
-  mutate(grpyr = case_when(year %in% c(2002, 2003) ~ "2002-03",
-                           year %in% c(2004, 2005) ~ "2004-05",
-                           year %in% c(2006, 2007) ~ "2006-07",
-                           year %in% c(2008, 2009) ~ "2008-09")) %>%
-  mutate(grpyr = as_factor(grpyr)) %>%
-  group_by(ID_Mun, grpyr) %>%
-  summarize(Deptartment  = Department[1],
-            cinep        = sum(cinep),
-            icews        = sum(icews),
-            ged          = sum(ged),
-            .groups      = "keep") %>%
-  ungroup() %>%
-  mutate(icews_bin = as.integer(icews > 0),
-         ged_bin   = as.integer(ged > 0),
-         cinep_bin = as.integer(cinep > 0))
-# ----------------------------------- #
-
-yrs <- sort(unique(colombia_grp$grpyr))
+yrs <- sort(unique(colombia_yg$year_grouped))
 
 # ----------------------------------- #
 # Kappa by grouped years - ICEWS
 # ----------------------------------- #
 icews <- sapply(yrs, function(x){
-  tmp <- colombia_grp %>% filter(grpyr == x)
+  tmp <- colombia_yg %>% filter(year_grouped == x)
   return(kappa_cm(observed = tmp$cinep_bin,
                   p_bin    = tmp$icews_bin))
 }, simplify = FALSE)
@@ -317,7 +294,7 @@ icews <- bind_rows(icews) %>%
 # Kappa by grouped years - GED
 # ----------------------------------- #
 ged <- sapply(yrs, function(x){
-  tmp <- colombia_grp %>% filter(grpyr == x)
+  tmp <- colombia_yg %>% filter(year_grouped == x)
   return(kappa_cm(observed = tmp$cinep_bin,
                   p_bin    = tmp$ged_bin))
 }, simplify = FALSE)
@@ -369,24 +346,6 @@ rm(icews, ged, plt_dat, plt, yrs)
 #-----------------------------------------------------------------------------#
 # COHEN'S KAPPA - CROSS SECTION                                           ----
 #-----------------------------------------------------------------------------#
-
-# ----------------------------------- #
-# Setup cross-section
-# ----------------------------------- #
-colombia_cs <- colombia %>%
-  st_drop_geometry() %>%
-  group_by(ID_Mun) %>%
-  summarize(Deptartment  = Department[1],
-            cinep        = sum(cinep),
-            icews        = sum(icews),
-            ged          = sum(ged),
-            .groups      = "keep") %>%
-  ungroup() %>%
-  mutate(icews_bin = as.integer(icews > 0),
-         ged_bin   = as.integer(ged > 0),
-         cinep_bin = as.integer(cinep > 0))
-# ----------------------------------- #
-
 
 # ----------------------------------- #
 # Kappa - ICEWS
@@ -448,7 +407,7 @@ plt <- ggplot(data = plt_dat, aes(x = x)) +
 #        height   = 6,
 #        dpi      = 340)
 
-rm(icews, ged, plt_dat, plt, yrs)
+rm(icews, ged, plt_dat, plt)
 #-----------------------------------------------------------------------------#
 
 
@@ -459,10 +418,10 @@ rm(icews, ged, plt_dat, plt, yrs)
 # ----------------------------------- #
 # Confusion Matrices - Yearly
 # ----------------------------------- #
-yrs <- unique(colombia$year)
+yrs <- unique(colombia_pn$year)
 
 tmp <- sapply(yrs, function(y){
-  dat <- colombia %>% filter(year == y)
+  dat <- colombia_pn %>% filter(year == y)
   sapply(c('icews_bin','ged_bin'), function(x){
     caret::confusionMatrix(as_factor(dat$cinep_bin),
                            as_factor(dat[[x]]))
@@ -478,10 +437,10 @@ rm(tmp, yrs)
 # ----------------------------------- #
 # Confusion Matrices - Grouped years
 # ----------------------------------- #
-yrs <- unique(colombia_grp$grpyr)
+yrs <- unique(colombia_yg$year_grouped)
 
 tmp <- sapply(yrs, function(y){
-  dat <- colombia_grp %>% filter(grpyr == y)
+  dat <- colombia_yg %>% filter(year_grouped == y)
   sapply(c('icews_bin','ged_bin'), function(x){
     caret::confusionMatrix(as_factor(dat$cinep_bin),
                            as_factor(dat[[x]]))
@@ -517,7 +476,7 @@ rm(tmp,)
 # ----------------------------------- #
 # Summary Statistics - Yearly
 # ----------------------------------- #
-tmp <- colombia %>%
+tmp <- colombia_pn %>%
   st_drop_geometry() %>%
   select(year, cinep, cinep_bin, icews, icews_bin, ged, ged_bin) %>%
   group_by(year) %>%
@@ -574,9 +533,10 @@ rm(tmp)
 # ----------------------------------- #
 # Summary Statistics - Grouped years
 # ----------------------------------- #
-tmp <- colombia_grp %>%
-  select(grpyr, cinep, cinep_bin, icews, icews_bin, ged, ged_bin) %>%
-  group_by(grpyr) %>%
+tmp <- colombia_yg %>%
+  st_drop_geometry() %>%
+  select(year_grouped, cinep, cinep_bin, icews, icews_bin, ged, ged_bin) %>%
+  group_by(year_grouped) %>%
   summarize(MEAN_CINEP     = mean(cinep),
             MEAN_CINEP.BIN = mean(cinep_bin),
             MIN_CINEP      = min(cinep),
@@ -605,7 +565,7 @@ tmp <- colombia_grp %>%
             SD_GED.BIN   = sd(ged_bin)
   ) %>%
   pivot_longer(.,
-               cols = !contains("grpyr"),
+               cols = !contains("year_grouped"),
                names_to = c("stat","var"),
                names_sep = "_",
                values_to = "vals") %>%
@@ -616,12 +576,12 @@ tmp <- colombia_grp %>%
 # To arrange by counts and binary outcomes separately
 tmp <- tmp %>%
   mutate(bin = case_when(str_detect(var, "BIN") ~ 1, TRUE ~ 0)) %>%
-  arrange(grpyr, bin, var)
+  arrange(year_grouped, bin, var)
 
 tmp[,2:6] %>%
   kbl(digits = 3) %>%
   kable_styling(bootstrap_options = "striped", full_width = TRUE) %>%
-  pack_rows(index = table(tmp$grpyr))
+  pack_rows(index = table(tmp$year_grouped))
 
 rm(tmp)
 # ----------------------------------- #
@@ -631,6 +591,7 @@ rm(tmp)
 # Summary Statistics - Cross section
 # ----------------------------------- #
 tmp <- colombia_cs %>%
+  st_drop_geometry() %>%
   select(cinep, cinep_bin, icews, icews_bin, ged, ged_bin) %>%
   summarize(MEAN_CINEP     = mean(cinep),
             MEAN_CINEP.BIN = mean(cinep_bin),
@@ -686,24 +647,8 @@ rm(tmp)
 #-----------------------------------------------------------------------------#
 # CLEAN-UP                                                                ----
 #-----------------------------------------------------------------------------#
-rm(d, kappa_cm)
-#-----------------------------------------------------------------------------#
-
-
-
-#-----------------------------------------------------------------------------#
-# SAVE                                                                    ----
-#-----------------------------------------------------------------------------#
-save.image(file = "data/data_variables.RData")
 rm(list = ls())
-
-
-
-
-
-
-
-
+#-----------------------------------------------------------------------------#
 
 
 

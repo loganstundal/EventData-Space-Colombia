@@ -190,14 +190,11 @@ cinep <- cinep %>%
 #-----------------------------------------------------------------------------#
 # PREP SF PANEL                                                           ----
 #-----------------------------------------------------------------------------#
-colombia_panel <- do.call(bind_rows,
+colombia_pn <- do.call(bind_rows,
                           replicate(n        = length(yr_min:yr_max),
                                     expr     = colombia,
                                     simplify = F))
-colombia_panel$year <- rep(yr_min:yr_max, each = nrow(colombia))
-
-colombia <- colombia_panel
-rm(colombia_panel)
+colombia_pn$year <- rep(yr_min:yr_max, each = nrow(colombia))
 #-----------------------------------------------------------------------------#
 
 
@@ -205,12 +202,17 @@ rm(colombia_panel)
 #-----------------------------------------------------------------------------#
 # MERGE ALL                                                               ----
 #-----------------------------------------------------------------------------#
-colombia <- colombia %>%
+colombia_pn <- colombia_pn %>%
   left_join(., cinep,  by = c("year","ID_Mun")) %>%
   left_join(., events, by = c("year","ID_Mun")) %>%
   left_join(., ge,     by = c("year","ID_Mun")) %>%
   mutate(across(starts_with(c("cinep","icews","ged")),
-                ~replace_na(.x, 0)))
+                ~replace_na(.x, 0)),
+
+         # Bogota dummy
+         bogota_dummy = ifelse(Department == 'Bogota D.C.', 1, 0)) %>%
+  as_tibble() %>%
+  st_set_geometry(., "geometry")
 
 rm(yr_min, yr_max, cinep, events, ge)
 #-----------------------------------------------------------------------------#
@@ -218,13 +220,77 @@ rm(yr_min, yr_max, cinep, events, ge)
 
 
 #-----------------------------------------------------------------------------#
-# BINARY OUTCOMES, BOGOTA DUMMY, & COLUMN ORDERING                        ----
+# GROUPED-YEAR AND CROSS-SECTION AGGREGATIONS                             ----
 #-----------------------------------------------------------------------------#
-colombia <- colombia %>%
-  mutate(
-         # Bogota dummy
-         bogota_dummy = ifelse(Department == 'Bogota D.C.', 1, 0),
 
+# ----------------------------------- #
+# Years-Grouped
+# ----------------------------------- #
+colombia_yg <- colombia_pn %>%
+  st_drop_geometry() %>%
+  mutate(year_grouped = case_when(year %in% c(2002, 2003) ~ "2002-03",
+                                  year %in% c(2004, 2005) ~ "2004-05",
+                                  year %in% c(2006, 2007) ~ "2006-07",
+                                  year %in% c(2008, 2009) ~ "2008-09")) %>%
+  mutate(year_grouped = as_factor(year_grouped)) %>%
+  group_by(ID_Mun, year_grouped) %>%
+  summarize(across(c(Department, Municipality, area_km2, area_km2_ln,
+                     distance_bogota_km, distance_bogota_km_ln,
+                     centroid_mun_long, centroid_mun_lat,
+                     terrain_ri_mean_m, bogota_dummy), ~ .[1]),
+
+            cinep        = sum(cinep),
+            icews        = sum(icews),
+            ged          = sum(ged),
+
+            across(c(forest_per, nl_mean, pop_sum), mean),
+
+            .groups      = "keep") %>%
+  ungroup() %>%
+  mutate(pop_sum_ln = log(pop_sum)) %>%
+  left_join(., colombia[,c("ID_Mun")], by = "ID_Mun") %>%
+  st_set_geometry(., "geometry")
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Cross-Section
+# ----------------------------------- #
+colombia_cs <- colombia_pn %>%
+  st_drop_geometry() %>%
+  group_by(ID_Mun) %>%
+  summarize(across(c(Department, Municipality, area_km2, area_km2_ln,
+                     distance_bogota_km, distance_bogota_km_ln,
+                     centroid_mun_long, centroid_mun_lat,
+                     terrain_ri_mean_m, bogota_dummy), ~ .[1]),
+
+            cinep        = sum(cinep),
+            icews        = sum(icews),
+            ged          = sum(ged),
+
+            across(c(forest_per, nl_mean, pop_sum), mean),
+
+            .groups      = "keep") %>%
+  ungroup() %>%
+  mutate(pop_sum_ln = log(pop_sum)) %>%
+  left_join(., colombia[,c("ID_Mun")], by = "ID_Mun") %>%
+  st_set_geometry(., "geometry")
+# ----------------------------------- #
+
+rm(colombia)
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# BINARY OUTCOMES & COLUMN ORDERING                                       ----
+#-----------------------------------------------------------------------------#
+
+# ----------------------------------- #
+# Panel
+# ----------------------------------- #
+colombia_pn <- colombia_pn %>%
+  mutate(
          # Binary outcomes
          icews_bin    = as.integer(icews > 0),
          ged_bin      = as.integer(ged   > 0),
@@ -251,7 +317,83 @@ colombia <- colombia %>%
   # Arrange columns
   select(ID_Mun, Department, Municipality, year,
          starts_with(c("cinep","icews","ged")),
-         sort(names(.)))
+         sort(names(.)),
+         geometry) %>%
+  relocate(geometry, .after = last_col())
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Years-Grouped
+# ----------------------------------- #
+colombia_yg <- colombia_yg %>%
+  mutate(
+    # Binary outcomes
+    icews_bin    = as.integer(icews > 0),
+    ged_bin      = as.integer(ged   > 0),
+    cinep_bin    = as.integer(cinep > 0)) %>%
+
+  mutate(icews_cinep_under = case_when(icews_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
+
+         ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0),
+
+         # Factors for mapping
+         icews_bias_fct = as_factor(case_when(icews_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                              icews_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                              icews_bin == cinep_bin          ~ 'Agree')),
+
+         ged_bias_fct = as_factor(case_when(ged_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                            ged_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                            ged_bin == cinep_bin          ~ 'Agree'))) %>%
+  mutate(icews_bias_fct = suppressWarnings({fct_relevel(icews_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))}),
+         ged_bias_fct   = suppressWarnings({fct_relevel(ged_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))})) %>%
+  # Arrange columns
+  select(ID_Mun, Department, Municipality, year_grouped,
+         starts_with(c("cinep","icews","ged")),
+         sort(names(.))) %>%
+  relocate(geometry, .after = last_col())
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Cross Section
+# ----------------------------------- #
+colombia_cs <- colombia_cs %>%
+  mutate(
+    # Binary outcomes
+    icews_bin    = as.integer(icews > 0),
+    ged_bin      = as.integer(ged   > 0),
+    cinep_bin    = as.integer(cinep > 0)) %>%
+
+  mutate(icews_cinep_under = case_when(icews_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
+
+         ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0),
+
+         # Factors for mapping
+         icews_bias_fct = as_factor(case_when(icews_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                              icews_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                              icews_bin == cinep_bin          ~ 'Agree')),
+
+         ged_bias_fct = as_factor(case_when(ged_bin == 0 & cinep_bin == 1 ~ 'Underreport',
+                                            ged_bin == 1 & cinep_bin == 0 ~ 'Overreport',
+                                            ged_bin == cinep_bin          ~ 'Agree'))) %>%
+  mutate(icews_bias_fct = suppressWarnings({fct_relevel(icews_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))}),
+         ged_bias_fct   = suppressWarnings({fct_relevel(ged_bias_fct,
+                                                        levels = c("Underreport", "Overreport", "Agree"))})) %>%
+  # Arrange columns
+  select(ID_Mun, Department, Municipality,
+         starts_with(c("cinep","icews","ged")),
+         sort(names(.))) %>%
+  relocate(geometry, .after = last_col())
+# ----------------------------------- #
+
 #-----------------------------------------------------------------------------#
 
 
@@ -259,5 +401,5 @@ colombia <- colombia %>%
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-save(colombia, file = "data/data_variables.RData")
+save.image(file = "data/data_variables.RData")
 rm(list = ls())
