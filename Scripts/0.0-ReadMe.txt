@@ -54,22 +54,24 @@ imported and exported data files are stored in the Data/ directory.
              Cohen's Kappa, and confusion matricies as well as summary
              statistics.
   - Imports: data_variables.RData
-  - Exports: NA
+  - Exports: Various figures to Plots/EDA/
 
 # ----------------------------------- #
 
 3.1: EDA - Maps
-  - Purpose:
+  - Purpose: Generates various plots of the distribution of the DVs as well as
+             their spatial distributions.
   - Imports: data_variables.RData
-  - Exports:
+  - Exports: Various figures to Plots/EDA/
 
 # ----------------------------------- #
 
 4.0: Analysis - Discrete
-  - Purpose:
+  - Purpose: Estimate a series of spatial lag and spatial error probit models.
   - Imports: data_variables.RData
              data_spatial.RData
-  - Exports:
+  - Exports: models_discrete.RData
+  - Notes  : Move the spatial lags to the appendix script later?
 
 # ----------------------------------- #
 
