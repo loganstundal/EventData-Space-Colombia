@@ -67,7 +67,8 @@ imported and exported data files are stored in the Data/ directory.
 # ----------------------------------- #
 
 4.0: Analysis - Discrete
-  - Purpose: Estimate a series of spatial lag and spatial error probit models.
+  - Purpose: Estimate a series of discrete spatial lag and spatial error probit
+             models.
   - Imports: data_variables.RData
              data_spatial.RData
   - Exports: models_discrete.RData
