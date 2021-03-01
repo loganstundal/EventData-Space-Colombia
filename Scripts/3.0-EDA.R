@@ -82,32 +82,40 @@ active_farc <- colombia_pn %>%
             popden  = mean(popden),
             .groups = "keep")
 
-quantile(active_farc$cinep, probs = 0.75)
+# quantile(active_farc$cinep, probs = 0.75)
 
 active_farc <- active_farc %>%
   ungroup() %>%
-  filter(cinep > 1) %>%
+  filter(cinep > 10) %>%
   arrange(desc(popden)) %>%
 
-  # Slice top and bottom 4
-  slice(1:4, (n()-3):n()) %>%
+  # Slice top and bottom 5
+  slice(1:5, (n()-4):n()) %>%
   mutate(rank = 1:n()) %>%
-  mutate(x = as_factor(case_when(rank %in% 1:4 ~ "Highest Pop. Den.",
+  mutate(x = as_factor(case_when(rank %in% 1:5 ~ "Highest Pop. Den.",
                                  TRUE ~ "Lowest Pop, Den.")),
          LABEL = Municipality,
 
          # Nudge factors for map (assigned values in meters)
-         nx    = case_when(Municipality %in% c("Sincelejo",
-                                               "Medellin",
-                                               "Bogota D.C.",
-                                               "Paz de Ariporo") ~ 1e6,
-                           TRUE ~ 0),
-         ny   = case_when(Municipality %in% c("Sincelejo",
-                                              "Medellin",
-                                              "Bogota D.C.",
-                                              "Paz de Ariporo") ~ 1e6,
+         nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
+                                               "Tibu",
+                                               "Tame",
+                                               "San Jose Guaviare") ~ 1e6,
+                           TRUE ~ -5e5),
+         ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
+                                              "Tibu",
+                                              "Tame",
+                                              "Medio Atrato",
+                                              "San Carlos",
+                                              "Samana") ~ 1e6,
                           TRUE ~ -1e6)
-         )
+         ) %>%
+  mutate(ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
+                        Municipality == "Acevedo" ~ -8e5,
+                        Municipality == "Samana" ~ 1.15e6,
+                        TRUE ~ ny),
+         nx = case_when(Municipality == "Samana" ~ -3e5,
+                        TRUE ~ nx))
 # ----------------------------------- #
 
 
@@ -142,13 +150,13 @@ mp <- ggplot(data = active_farc) +
     nudge_x = active_farc$nx,
     nudge_y = active_farc$ny
   )
-
 # mp
-# ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
-#        units    = "in",
-#        width    = 8,
-#        height   = 8,
-#        dpi      = 340)
+ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
+       plot     = mp,
+       units    = "in",
+       width    = 8,
+       height   = 8,
+       dpi      = 340)
 # ----------------------------------- #
 rm(active_farc, mp)
 #-----------------------------------------------------------------------------#
