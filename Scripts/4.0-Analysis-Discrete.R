@@ -59,6 +59,7 @@ fn  <- paste0("distance_bogota_km_ln + I(distance_bogota_km_ln^2) + ",
               "forest_per + nl_mean")
 dvs <- c("icews_bin", "ged_bin", "cinep_bin",
          "icews_cinep_under","ged_cinep_under")
+# dvs <- c("icews_bin", "icews_cinep_under")
 
 fs  <- lapply(paste(dvs, fn, sep = " ~ "), as.formula)
 names(fs) <- dvs
@@ -90,9 +91,70 @@ ns_probits <- lapply(fs, function(x){
 
 texreg::screenreg(ns_probits)
 
-reg_tbl(model_list     = ns_probits,
-        model_names    = dvs,
-        variable_names = varnames)
+reg_tbl(model_list        = ns_probits,
+        model_names       = dvs,
+        variable_names    = varnames,
+        bold_significance = TRUE)
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Power interpret?
+# ----------------------------------- #
+mod_mat <- model.matrix(ns_probits$icews_cinep_under)
+colnames(mod_mat) <- c("Intercept", varnames)
+mod_mat <- colMeans(mod_mat)
+
+p       <- seq(min(colombia_cs$pop_sum_ln),
+               max(colombia_cs$pop_sum_ln),
+               length.out = 100)
+mod_mat <- t(mod_mat)
+
+mod_mat["pop_sum_ln"] = 1:4
+
+
+mod_mat <- cbind(as.data.frame(t(mod_mat)), "pop_sum_ln" = p)
+
+pred <- predict(ns_probits$icews_cinep_under, newdata = mod_mat)
+pred <- pnorm(pred)
+
+d <- data.frame(x = p, y = pred)
+ggplot(data = d, aes(x = x, y = pred)) +
+  geom_line() +
+  theme_bw()
+
+
+
+b1 <- ns_probits$icews_cinep_under$coefficients[2]
+b2 <- ns_probits$icews_cinep_under$coefficients[3]
+
+b1;b2
+
+p <- seq(min(colombia_cs$pop_sum_ln), max(colombia_cs$pop_sum_ln), length.out = 10)
+z <- (b1 * p) + (b2 * p^2)
+d <- data.frame(x = p, y = z)
+
+# Can't believe I'd fogotten how to do this...
+# https://www.statalist.org/forums/forum/general-stata-discussion/general/1381054-inflection-point-in-qudrating-relationship
+# https://study.com/academy/lesson/how-to-find-the-vertex-of-a-quadratic-equation.html
+vertex <- -b1/(2*b2)
+vy     <- b1*vertex + b2*vertex^2
+
+# Population value at vertex
+exp(vertex)
+
+ggplot(data = d, aes(x = x, y = y)) +
+  geom_line() +
+  geom_hline(aes(yintercept = vy, color = "Vertex"),
+             linetype = "dashed",
+             size     = 1) +
+  theme_bw()
+
+library(margins)
+# mod <- glm(formula = fs$icews_cinep_under, data  = colombia_cs %>% st_drop_geometry() %>% as.data.frame(), family = binomial(link = "probit"))
+cplot(mod, what = "prediction" , x = "pop_sum_ln")
+margins(mod, variables = "pop_sum_ln", type = "response")
+
 # ----------------------------------- #
 
 

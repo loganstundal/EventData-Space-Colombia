@@ -80,6 +80,7 @@ active_farc <- colombia_pn %>%
             icews   = sum(icews),
             ged     = sum(ged),
             popden  = mean(popden),
+            capdist = distance_bogota_km[1],
             .groups = "keep")
 
 # quantile(active_farc$cinep, probs = 0.75)
@@ -87,35 +88,75 @@ active_farc <- colombia_pn %>%
 active_farc <- active_farc %>%
   ungroup() %>%
   filter(cinep > 10) %>%
-  arrange(desc(popden)) %>%
+  # arrange(desc(popden)) %>%
+  arrange(capdist) %>%
 
   # Slice top and bottom 5
   slice(1:5, (n()-4):n()) %>%
   mutate(rank = 1:n()) %>%
-  mutate(x = as_factor(case_when(rank %in% 1:5 ~ "Highest Pop. Den.",
-                                 TRUE ~ "Lowest Pop, Den.")),
-         LABEL = Municipality,
+  mutate(
 
-         # Nudge factors for map (assigned values in meters)
+         # ----------------------------------- #
+         # Remoteness via "distance - Bogota"
+         # ----------------------------------- #
+         x = as_factor(case_when(rank %in% 1:5 ~ "Closest",
+                                 TRUE ~ "Furthest")),
          nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
                                                "Tibu",
-                                               "Tame",
-                                               "San Jose Guaviare") ~ 1e6,
+                                               "Tame") ~ 1e6,
                            TRUE ~ -5e5),
          ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
                                               "Tibu",
                                               "Tame",
                                               "Medio Atrato",
                                               "San Carlos",
+                                              "Dabeiba",
                                               "Samana") ~ 1e6,
-                          TRUE ~ -1e6)
-         ) %>%
-  mutate(ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
-                        Municipality == "Acevedo" ~ -8e5,
-                        Municipality == "Samana" ~ 1.15e6,
-                        TRUE ~ ny),
-         nx = case_when(Municipality == "Samana" ~ -3e5,
-                        TRUE ~ nx))
+                          TRUE ~ -1e6),
+         # ----------------------------------- #
+
+
+         # ----------------------------------- #
+         # Remoteness via "population density
+         # ----------------------------------- #
+         # x = as_factor(case_when(rank %in% 1:5 ~ "Highest Pop. Den.",
+         #                         TRUE ~ "Lowest Pop, Den.")),
+         # Nudge factors for map (assigned values in meters)
+         # nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
+         #                                       "Tibu",
+         #                                       "Tame",
+         #                                       "San Jose Guaviare") ~ 1e6,
+         #                   TRUE ~ -5e5),
+         # ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
+         #                                      "Tibu",
+         #                                      "Tame",
+         #                                      "Medio Atrato",
+         #                                      "San Carlos",
+         #                                      "Samana") ~ 1e6,
+         #                  TRUE ~ -1e6),
+         # ----------------------------------- #
+
+         LABEL = Municipality,
+
+         )
+  # mutate(
+  #        # Distance - Bogota
+  #       ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
+  #                      Municipality == "Acevedo" ~ -8e5,
+  #                      Municipality == "Samana" ~ 1.15e6,
+  #                      TRUE ~ ny),
+  #       nx = case_when(Municipality == "Samana" ~ -3e5,
+  #                      TRUE ~ nx)
+
+         # Population density
+         # ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
+         #                Municipality == "Acevedo" ~ -8e5,
+         #                Municipality == "Samana" ~ 1.15e6,
+         #                TRUE ~ ny),
+         # nx = case_when(Municipality == "Samana" ~ -3e5,
+         #                TRUE ~ nx)
+
+         # )
 # ----------------------------------- #
 
 
@@ -123,6 +164,9 @@ active_farc <- active_farc %>%
 # Most active - table
 # ----------------------------------- #
 active_farc[,1:6] %>% kbl(format = "pipe", digits = 2)
+
+active_farc[,1:6] %>% kbl(format = "html", digits = 2) %>%
+  save_kable("Plots/EDA/cineptmp.html")
 # ----------------------------------- #
 
 
@@ -150,7 +194,7 @@ mp <- ggplot(data = active_farc) +
     nudge_x = active_farc$nx,
     nudge_y = active_farc$ny
   )
-# mp
+mp
 ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
        plot     = mp,
        units    = "in",
