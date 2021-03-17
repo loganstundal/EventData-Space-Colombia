@@ -99,8 +99,10 @@ active_farc <- active_farc %>%
          # ----------------------------------- #
          # Remoteness via "distance - Bogota"
          # ----------------------------------- #
-         x = as_factor(case_when(rank %in% 1:5 ~ "Closest",
-                                 TRUE ~ "Furthest")),
+         # x = as_factor(case_when(rank %in% 1:5 ~ "Closest",
+         #                         TRUE ~ "Furthest")),
+         x = as_factor(case_when(rank %in% 1:5 ~ "Journalistically Near",
+                                 TRUE ~ "Journalistically Remote")),
          nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
                                                "Tibu",
                                                "Tame") ~ 1e6,
@@ -111,7 +113,7 @@ active_farc <- active_farc %>%
                                               "Medio Atrato",
                                               "San Carlos",
                                               "Dabeiba",
-                                              "Samana") ~ 1e6,
+                                              "Samana") ~ 1.25e6,
                           TRUE ~ -1e6),
          # ----------------------------------- #
 
@@ -138,7 +140,9 @@ active_farc <- active_farc %>%
 
          LABEL = Municipality,
 
-         )
+         ) %>%
+  mutate(nx = case_when(Municipality == "San Vicente del Caguan" ~ 5e5,
+                        TRUE ~ nx))
   # mutate(
   #        # Distance - Bogota
   #       ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
@@ -165,7 +169,7 @@ active_farc <- active_farc %>%
 # ----------------------------------- #
 active_farc[,1:6] %>% kbl(format = "pipe", digits = 2)
 
-active_farc[,1:6] %>% kbl(format = "html", digits = 2) %>%
+active_farc[,1:7] %>% kbl(format = "html", digits = 2) %>%
   save_kable("Plots/EDA/cineptmp.html")
 # ----------------------------------- #
 
@@ -192,14 +196,19 @@ mp <- ggplot(data = active_farc) +
     aes(label = LABEL, geometry = geometry),
     stat = "sf_coordinates",
     nudge_x = active_farc$nx,
-    nudge_y = active_farc$ny
-  )
+    nudge_y = active_farc$ny,
+    na.rm   = TRUE,
+    box.padding = 2,
+    force = 40
+  ) +
+  labs(title = "Remoteness: Distance for international journalists traveling from Bogota",
+       subtitle = "Top 10 Colombain municipalities based on CINEP-reported FARC activities")
 mp
 ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
        plot     = mp,
        units    = "in",
-       width    = 8,
-       height   = 8,
+       width    = 12,
+       height   = 12,
        dpi      = 340)
 # ----------------------------------- #
 rm(active_farc, mp)
