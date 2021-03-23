@@ -101,8 +101,8 @@ active_farc <- active_farc %>%
          # ----------------------------------- #
          # x = as_factor(case_when(rank %in% 1:5 ~ "Closest",
          #                         TRUE ~ "Furthest")),
-         x = as_factor(case_when(rank %in% 1:5 ~ "Journalistically Near",
-                                 TRUE ~ "Journalistically Remote")),
+         x = as_factor(case_when(rank %in% 1:5 ~ "Journalistic Proximity",
+                                 TRUE ~ "Journalistic Remoteness")),
          nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
                                                "Tibu",
                                                "Tame") ~ 1e6,

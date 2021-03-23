@@ -150,7 +150,13 @@ confusion_ts <- colombia_pn %>%
   left_join(., active_farc[,c("Department", "Municipality","class")],
             by  = c("Department", "Municipality")) %>%
   drop_na(class) %>%
-  select(Municipality, class, year_slice, year, cinep, icews, ged) %>%
+  group_by(ID_Mun, year_slice) %>%
+  summarize(across(c(cinep, icews, ged), sum),
+            Municipality = Municipality[1],
+            class = class[1],
+            .groups = "keep") %>%
+  ungroup() %>%
+  select(Municipality, class, year_slice, cinep, icews, ged) %>%
   mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}")) %>%
   mutate(across(c(cinep, icews, ged), ~factor(.x, levels = c(0,1))))
 
