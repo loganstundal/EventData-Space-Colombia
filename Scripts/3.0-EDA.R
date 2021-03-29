@@ -110,10 +110,10 @@ active_farc <- active_farc %>%
          ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
                                               "Tibu",
                                               "Tame",
-                                              "Medio Atrato",
+                                              # "Medio Atrato",
                                               "San Carlos",
                                               "Dabeiba",
-                                              "Samana") ~ 1.25e6,
+                                              "Samana") ~ 1.5e6,
                           TRUE ~ -1e6),
          # ----------------------------------- #
 
@@ -142,7 +142,9 @@ active_farc <- active_farc %>%
 
          ) %>%
   mutate(nx = case_when(Municipality == "San Vicente del Caguan" ~ 5e5,
-                        TRUE ~ nx))
+                        TRUE ~ nx),
+         ny = case_when(Municipality == "Vista Hermosa" ~ - 1e6,
+                        TRUE ~ ny))
   # mutate(
   #        # Distance - Bogota
   #       ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
@@ -167,10 +169,19 @@ active_farc <- active_farc %>%
 # ----------------------------------- #
 # Most active - table
 # ----------------------------------- #
-active_farc[,1:6] %>% kbl(format = "pipe", digits = 2)
+active_farc[,1:7] %>%
+  kbl(format = "latex", digits = 2,
+      col.names = c("Department","Municipality","CINEP","ICEWS","GED",
+                    "Pop. Density","Capital Dist.")) %>%
+  kable_classic_2(full_width = F) %>%
+  cat(., file = "CINEP-top-10-mun.txt")
 
-active_farc[,1:7] %>% kbl(format = "html", digits = 2) %>%
-  save_kable("Plots/EDA/cineptmp.html")
+active_farc[,1:7] %>%
+  kbl(format = "html", digits = 2,
+      col.names = c("Department","Municipality","CINEP","ICEWS","GED",
+                    "Pop. Density","Capital Dist.")) %>%
+  kable_classic_2(full_width = F) %>%
+  save_kable(file = "CINEP-top-10-mun.html")
 # ----------------------------------- #
 
 
@@ -183,23 +194,31 @@ active_farc <- colombia_pn %>%
   left_join(., active_farc, by = c("Department", "Municipality"))
 
 mp <- ggplot(data = active_farc) +
-  geom_sf(aes(fill = x), color = "gray10", size = 0.05) +
+  geom_sf(aes(fill = x), color = "gray60", size = 0.05) +
   scale_fill_discrete(na.value = "transparent") +
-  theme_bw() +
+  theme_minimal() +
   theme(panel.grid = element_blank(),
         legend.position  = "bottom",
         legend.direction = "horizontal",
         legend.title     = element_blank(),
-        axis.title = element_blank()) +
+        legend.text      = element_text(size = 6),
+        legend.key.size  = unit(3, "mm"),
+        axis.title       = element_blank(),
+        axis.text        = element_blank(),
+        text             = element_text(size = 8),
+        plot.title       = element_text(size = 7),
+        plot.subtitle    = element_text(size = 6)) +
   scale_fill_discrete(na.translate = FALSE) +
   ggrepel::geom_label_repel(
     aes(label = LABEL, geometry = geometry),
+    label.size = 0.1,
+    size = 1.5,
     stat = "sf_coordinates",
     nudge_x = active_farc$nx,
     nudge_y = active_farc$ny,
     na.rm   = TRUE,
-    box.padding = 2,
-    force = 40
+    box.padding = .25,
+    force = 50
   ) +
   labs(title = "Remoteness: Distance for international journalists traveling from Bogota",
        subtitle = "Top 10 Colombain municipalities based on CINEP-reported FARC activities")
@@ -207,8 +226,8 @@ mp
 ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
        plot     = mp,
        units    = "in",
-       width    = 12,
-       height   = 12,
+       width    = 4.5,
+       height   = 4.5,
        dpi      = 340)
 # ----------------------------------- #
 rm(active_farc, mp)

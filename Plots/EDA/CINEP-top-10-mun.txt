@@ -1,0 +1,28 @@
+\begin{table}
+\centering
+\begin{tabular}[t]{l|l|r|r|r|r|r}
+\hline
+Department & Municipality & CINEP & ICEWS & GED & Pop. Density & Capital Dist.\\
+\hline
+Caldas & Samana & 13 & 0 & 1 & 29.28 & 144.71\\
+\hline
+Antioquia & San Carlos & 12 & 0 & 1 & 19.68 & 191.26\\
+\hline
+Meta & Vista Hermosa & 11 & 0 & 9 & 3.71 & 193.01\\
+\hline
+Caqueta & San Vicente del Caguan & 15 & 12 & 5 & 2.91 & 317.73\\
+\hline
+Arauca & Tame & 21 & 0 & 4 & 7.76 & 327.95\\
+\hline
+Choco & Medio Atrato & 11 & 0 & 0 & 10.18 & 342.02\\
+\hline
+Antioquia & Dabeiba & 12 & 4 & 2 & 10.45 & 361.23\\
+\hline
+Huila & Acevedo & 13 & 0 & 0 & 36.54 & 382.08\\
+\hline
+Norte de Santander & Tibu & 13 & 7 & 4 & 11.14 & 447.93\\
+\hline
+Bolivar & El Carmen de Bolivar & 13 & 0 & 1 & 62.66 & 535.94\\
+\hline
+\end{tabular}
+\end{table}
