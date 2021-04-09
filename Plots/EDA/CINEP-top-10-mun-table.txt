@@ -1,0 +1,28 @@
+\begin{table}
+\centering
+\begin{tabular}[t]{l|l|r|r|r|r|r|l}
+\hline
+Department & Municipality & CINEP & ICEWS & GED & Pop. Density & Capital Dist. & Class\\
+\hline
+Tolima & Alvarado & 6 & 0 & 1 & 24.61 & 106.48 & Journalistic Proximity\\
+\hline
+Tolima & Dolores & 7 & 1 & 2 & 12.05 & 135.42 & Journalistic Proximity\\
+\hline
+Caldas & Samana & 13 & 0 & 1 & 29.28 & 144.71 & Journalistic Proximity\\
+\hline
+Antioquia & San Francisco & 6 & 0 & 0 & 15.95 & 168.78 & Journalistic Proximity\\
+\hline
+Antioquia & San Luis & 8 & 0 & 1 & 18.65 & 177.69 & Journalistic Proximity\\
+\hline
+Norte de Santander & Tibu & 13 & 7 & 4 & 11.14 & 447.93 & Journalistic Remoteness\\
+\hline
+Arauca & Arauca & 6 & 17 & 2 & 11.75 & 482.43 & Journalistic Remoteness\\
+\hline
+Sucre & Ovejas & 9 & 1 & 2 & 43.03 & 522.24 & Journalistic Remoteness\\
+\hline
+Bolivar & El Carmen de Bolivar & 13 & 0 & 1 & 62.66 & 535.94 & Journalistic Remoteness\\
+\hline
+Cesar & Valledupar & 8 & 0 & 1 & 73.51 & 593.07 & Journalistic Remoteness\\
+\hline
+\end{tabular}
+\end{table}

@@ -81,107 +81,54 @@ active_farc <- colombia_pn %>%
             ged     = sum(ged),
             popden  = mean(popden),
             capdist = distance_bogota_km[1],
-            .groups = "keep")
-
-# quantile(active_farc$cinep, probs = 0.75)
-
-active_farc <- active_farc %>%
+            .groups = "keep") %>%
   ungroup() %>%
-  filter(cinep > 10) %>%
-  # arrange(desc(popden)) %>%
+  filter(cinep > 5) %>%
   arrange(capdist) %>%
-
-  # Slice top and bottom 5
   slice(1:5, (n()-4):n()) %>%
   mutate(rank = 1:n()) %>%
   mutate(
-
-         # ----------------------------------- #
-         # Remoteness via "distance - Bogota"
-         # ----------------------------------- #
-         # x = as_factor(case_when(rank %in% 1:5 ~ "Closest",
-         #                         TRUE ~ "Furthest")),
-         x = as_factor(case_when(rank %in% 1:5 ~ "Journalistic Proximity",
-                                 TRUE ~ "Journalistic Remoteness")),
-         nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
-                                               "Tibu",
-                                               "Tame") ~ 1e6,
-                           TRUE ~ -5e5),
-         ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
-                                              "Tibu",
-                                              "Tame",
-                                              # "Medio Atrato",
-                                              "San Carlos",
-                                              "Dabeiba",
-                                              "Samana") ~ 1.5e6,
-                          TRUE ~ -1e6),
-         # ----------------------------------- #
-
-
-         # ----------------------------------- #
-         # Remoteness via "population density
-         # ----------------------------------- #
-         # x = as_factor(case_when(rank %in% 1:5 ~ "Highest Pop. Den.",
-         #                         TRUE ~ "Lowest Pop, Den.")),
-         # Nudge factors for map (assigned values in meters)
-         # nx    = case_when(Municipality %in% c("El Carmen de Bolivar",
-         #                                       "Tibu",
-         #                                       "Tame",
-         #                                       "San Jose Guaviare") ~ 1e6,
-         #                   TRUE ~ -5e5),
-         # ny   = case_when(Municipality %in% c("El Carmen de Bolivar",
-         #                                      "Tibu",
-         #                                      "Tame",
-         #                                      "Medio Atrato",
-         #                                      "San Carlos",
-         #                                      "Samana") ~ 1e6,
-         #                  TRUE ~ -1e6),
-         # ----------------------------------- #
-
-         LABEL = Municipality,
-
-         ) %>%
+    x = as_factor(case_when(rank %in% 1:5 ~ "Journalistic Proximity",
+                            TRUE ~ "Journalistic Remoteness")),
+    nx = case_when(Municipality %in% c("Ovejas", "San Luis","Samana","Alvarado","Dolores",
+                                       "San Francisco", "El Carmen de Bolivar")~ -1e6,
+                   TRUE ~ 1e6),
+    ny = case_when(Municipality %in% c("El Carmen de Bolivar", "Valledupar",
+                                       "Tibu","Arauca") ~ 1e6,
+                   Municipality %in% c("Alvarado","Dolores") ~ -1e6,
+                   TRUE ~ 0),
+   LABEL = Municipality) %>%
   mutate(nx = case_when(Municipality == "San Vicente del Caguan" ~ 5e5,
                         TRUE ~ nx),
          ny = case_when(Municipality == "Vista Hermosa" ~ - 1e6,
                         TRUE ~ ny))
-  # mutate(
-  #        # Distance - Bogota
-  #       ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
-  #                      Municipality == "Acevedo" ~ -8e5,
-  #                      Municipality == "Samana" ~ 1.15e6,
-  #                      TRUE ~ ny),
-  #       nx = case_when(Municipality == "Samana" ~ -3e5,
-  #                      TRUE ~ nx)
-
-         # Population density
-         # ny = case_when(Municipality == "Vista Hermosa" ~ -1.2e6,
-         #                Municipality == "Acevedo" ~ -8e5,
-         #                Municipality == "Samana" ~ 1.15e6,
-         #                TRUE ~ ny),
-         # nx = case_when(Municipality == "Samana" ~ -3e5,
-         #                TRUE ~ nx)
-
-         # )
 # ----------------------------------- #
 
 
 # ----------------------------------- #
 # Most active - table
 # ----------------------------------- #
-active_farc[,1:7] %>%
+active_farc %>%
+  select(c(Department:capdist,x)) %>%
+  kbl(format = "pipe", digits = 2,
+      col.names = c("Department","Municipality","CINEP","ICEWS","GED",
+                    "Pop. Density","Capital Dist.", "Class"))
+
+active_farc %>%
+  select(c(Department:capdist,x)) %>%
   kbl(format = "latex", digits = 2,
       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
-                    "Pop. Density","Capital Dist.")) %>%
+                    "Pop. Density","Capital Dist.", "Class")) %>%
   kable_classic_2(full_width = F) %>%
-  cat(., file = "CINEP-top-10-mun.txt")
+  cat(., file = "Plots/EDA/CINEP-top-10-mun-table.txt")
 
-active_farc[,1:7] %>%
+active_farc %>%
+  select(c(Department:capdist,x)) %>%
   kbl(format = "html", digits = 2,
       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
-                    "Pop. Density","Capital Dist.")) %>%
+                    "Pop. Density","Capital Dist.", "Class")) %>%
   kable_classic_2(full_width = F) %>%
-  save_kable(file = "CINEP-top-10-mun.html")
+  save_kable(file = "Plots/EDA/CINEP-top-10-mun-table.html")
 # ----------------------------------- #
 
 
@@ -196,6 +143,8 @@ active_farc <- colombia_pn %>%
 mp <- ggplot(data = active_farc) +
   geom_sf(aes(fill = x), color = "gray60", size = 0.05) +
   scale_fill_discrete(na.value = "transparent") +
+  scale_x_continuous(limits = c(-2.6e6,-788433.7)) +
+  scale_y_continuous(limits = c(3157019.2, 5e6)) +
   theme_minimal() +
   theme(panel.grid = element_blank(),
         legend.position  = "bottom",
@@ -222,8 +171,8 @@ mp <- ggplot(data = active_farc) +
   ) +
   labs(title = "Remoteness: Distance for international journalists traveling from Bogota",
        subtitle = "Top 10 Colombain municipalities based on CINEP-reported FARC activities")
-mp
-ggsave(filename = sprintf("Plots/EDA/High-CINEP-Sample-%s.png",d),
+# mp
+ggsave(filename = sprintf("Plots/EDA/CINEP-top-10-mun-map-%s.png",d),
        plot     = mp,
        units    = "in",
        width    = 4.5,

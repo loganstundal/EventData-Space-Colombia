@@ -77,171 +77,269 @@ active_farc <- colombia_pn %>%
   mutate(class = case_when(rank %in% 1:5 ~ "Non-remote", TRUE ~ "Remote"),
          ID    = paste(Department, Municipality, sep = "-"))
 
-active_farc[,1:8] %>% kbl(format = "pipe", digits = 2)
-#-----------------------------------------------------------------------------#
+# active_farc[,1:8] %>% kbl(format = "pipe", digits = 2)
+# ----------------------------------- #
 
 
-
-#-----------------------------------------------------------------------------#
-# CROSS-SECTION                                                           ----
-#-----------------------------------------------------------------------------#
-confusion_cs <- colombia_cs %>%
+# ----------------------------------- #
+# Confusion matrices data
+# ----------------------------------- #
+confusion <- colombia_pn %>%
   left_join(., active_farc[,c("Department", "Municipality","class")],
             by  = c("Department", "Municipality")) %>%
-  drop_na(class) %>%
-  select(Municipality, class, cinep, icews, ged) %>%
-  mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}")) %>%
-  mutate(across(c(cinep, icews, ged), ~factor(.x, levels = c(0,1))))
-
-
-table(confusion_cs$cinep,
-      confusion_cs$icews,
-      confusion_cs$class)
-
-table(confusion_cs$cinep,
-      confusion_cs$ged,
-      confusion_cs$class)
-
-
-iv <- c("icews", "ged")
-cl <- c("Remote", "Non-remote")
-
-for(v in iv){
-  for(c in cl){
-    cat(sprintf("\n\nVariable: %s\nClass:%s\n\n",v,c))
-    print(    confusion_cs %>% filter(class == !!{c}) %>%
-                select(cinep, !!sym(v)) %>%
-                {caret::confusionMatrix(.$cinep,
-                                        .[[v]])})
-  }
-};rm(v,c)
-
-for(v in iv){
-  for(c in cl){
-    cat(sprintf("\n\nVariable: %s\nClass:%s\n\n",v,c))
-    print(    confusion_cs %>% filter(class == !!{c}) %>%
-                select(cinep, !!sym(v)) %>%
-                {kappa_cm(observed = .$cinep,
-                          p_bin    = .[[v]])})
-  }
-};rm(v,c)
-
-
-
-
-#-----------------------------------------------------------------------------#
-# TIME-SLICES                                                             ----
-#-----------------------------------------------------------------------------#
-
-# ----------------------------------- #
-# Grouping variable setup
-# ----------------------------------- #
-colombia_pn <- colombia_pn %>%
   mutate(year_slice = case_when(year %in% 2002:2004 ~ "2002-2004",
                                 year %in% 2005:2007 ~ "2005-2007",
-                                year %in% 2008:2009 ~ "2008-2009"))
-# ----------------------------------- #
-
-
-# ----------------------------------- #
-# Group-year confusion matrices
-# ----------------------------------- #
-confusion_ts <- colombia_pn %>%
-  left_join(., active_farc[,c("Department", "Municipality","class")],
-            by  = c("Department", "Municipality")) %>%
+                                year %in% 2008:2009 ~ "2008-2009")) %>%
   drop_na(class) %>%
-  group_by(ID_Mun, year_slice) %>%
-  summarize(across(c(cinep, icews, ged), sum),
-            Municipality = Municipality[1],
-            class = class[1],
-            .groups = "keep") %>%
-  ungroup() %>%
-  select(Municipality, class, year_slice, cinep, icews, ged) %>%
-  mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}")) %>%
-  mutate(across(c(cinep, icews, ged), ~factor(.x, levels = c(0,1))))
+  select(Municipality, year, year_slice ,class, cinep, icews, ged) %>%
+  mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}"))
 
-table(confusion_ts$cinep,
-      confusion_ts$icews,
-      confusion_ts$class,
-      confusion_ts$year_slice)
-
-iv <- c("icews", "ged")
-ys <- c("2002-2004","2005-2007","2008-2009")
-cl <- c("Remote")
-
-for(v in iv){
-  for(c in cl){
-    for(y in ys){
-      cat(sprintf("\n\nVariable: %s\nClass:%s\nYears:%s\n\n",v,c,y))
-      print(    confusion_ts %>%
-                  filter(class == !!{c},
-                         year_slice == !!{y}) %>%
-                  select(cinep, !!sym(v)) %>%
-                  {caret::confusionMatrix(.$cinep,
-                                          .[[v]])})
-    }
-
-  }
-};rm(v,c,y)
-
-for(v in iv){
-  for(c in cl){
-    for(y in ys){
-      cat(sprintf("\n\nVariable: %s\nClass:%s\nYears:%s\n\n",v,c,y))
-      print(    confusion_ts %>%
-                  filter(class == !!{c},
-                         year_slice == !!{y}) %>%
-                  select(cinep, !!sym(v)) %>%
-                  {kappa_cm(observed = .$cinep,
-                            p_bin    = .[[v]])})
-    }
-  }
-};rm(v,c,y)
-
-
+rm(list = c(ls(pattern = "colombia"), "active_farc"))
 # ----------------------------------- #
 
-
-
-table(confusion_ts$cinep,
-      confusion_ts$ged,
-      confusion_ts$class,
-      confusion_ts$year_slice)
-
-
-cl <- c("Non-remote")
-
-for(v in iv){
-  for(c in cl){
-    for(y in ys){
-      cat(sprintf("\n\nVariable: %s\nClass:%s\nYears:%s\n\n",v,c,y))
-      print(    confusion_ts %>%
-                  filter(class == !!{c},
-                         year_slice == !!{y}) %>%
-                  select(cinep, !!sym(v)) %>%
-                  {caret::confusionMatrix(.$cinep,
-                                          .[[v]])})
-    }
-
-  }
-};rm(v,c,y)
-
-for(v in iv){
-  for(c in cl){
-    for(y in ys){
-      cat(sprintf("\n\nVariable: %s\nClass:%s\nYears:%s\n\n",v,c,y))
-      print(    confusion_ts %>%
-                  filter(class == !!{c},
-                         year_slice == !!{y}) %>%
-                  select(cinep, !!sym(v)) %>%
-                  {round(kappa_cm(observed = .$cinep,
-                                  p_bin    = .[[v]]),2)})
-    }
-  }
-};rm(v,c,y)
-
-rm(iv, ys, cl)
+# Iteration variables
+cl <- unique(confusion$class)
+ys <- unique(confusion$year_slice)
 #-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# CONFUSION MATRICES
+#-----------------------------------------------------------------------------#
+# 1.	One event per year over 8 years; adds to 40	       [2 tables total]
+# 2.	One event over 8 years; adds to 5		               [2 tables total]
+# 3.	One event per year in time slice; add to 15 or 10  [6 tables total]
+# 4.	One event over time slice years; adds to 5	       [6 tables total]
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# 1.	One event per year over 8 years; adds to 40	        2 tables total] ----
+#-----------------------------------------------------------------------------#
+for(cls in cl){
+  cat(sprintf("Class:%s\n\n",cls))
+  cat("             ICEWS               GED              \n")
+
+  tmp <- confusion %>% filter(class == !!{cls}) %>% select(cinep, icews, ged) %>%
+    mutate(across(everything(), ~factor(.x, levels = c("0","1"))))
+
+  res <- sapply(c("icews", "ged"), function(x){
+    cfm <- caret::confusionMatrix(data = tmp[[x]], reference = tmp$cinep, positive = "1")
+
+    tabs <- cfm$table
+    acc  <- round(cfm$overall[c("AccuracyLower","Accuracy","AccuracyUpper")] * 100, 1)
+
+    kap  <- round(kappa_cm(observed = tmp$cinep, p_bin = tmp[[x]]),2)
+
+    return(list("table"    = t(tabs),
+                "accuracy" = acc,
+                "kappa"    = kap))
+  }, simplify = FALSE)
+
+  tab <- cbind(res$icews$table, res$ged$table)
+  colnames(tab) <- rep(c("No Event", "Event"),2)
+  rownames(tab) <- rep(c("No Event", "Event"),1)
+
+  acc <- data.frame(rbind(res$icews$accuracy,res$ged$accuracy)) %>%
+    mutate(CI = sprintf("[%s, %s]", AccuracyLower, AccuracyUpper)) %>%
+    select(Accuracy, CI)
+  rownames(acc) <- c("ICEWS","GED")
+
+  kap <- data.frame(rbind(res$icews$kappa,res$ged$kappa)) %>%
+    mutate(CI = sprintf("[%s, %s]", Kappa_lci, Kappa_uci)) %>%
+    select(Kappa, CI)
+  rownames(kap) <- c("ICEWS","GED")
+
+  print(tab);cat(rep("\n",2))
+  print(acc);cat(rep("\n",2))
+  print(kap);cat(rep("\n",2))
+  cat(rep("\n",6))
+};rm(cls,tmp, res, tab, acc, kap)
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# 2.	One event over 8 years; adds to 5		               [2 tables total]
+#-----------------------------------------------------------------------------#
+for(cls in cl){
+  cat(sprintf("Class:%s\n\n",cls))
+  cat("             ICEWS               GED              \n")
+
+  tmp <- confusion %>% filter(class == !!{cls}) %>%
+    select(Municipality,cinep, icews, ged) %>%
+    group_by(Municipality) %>%
+    summarize(across(everything(), ~sum(.x))) %>%
+    ungroup() %>%
+    select(cinep:ged) %>%
+    mutate(across(everything(), ~case_when(.x > 0 ~ 1, TRUE ~ 0))) %>%
+    mutate(across(everything(), ~factor(.x, levels = c("0","1"))))
+
+  res <- sapply(c("icews", "ged"), function(x){
+    cfm <- caret::confusionMatrix(data = tmp[[x]], reference = tmp$cinep, positive = "1")
+
+    tabs <- cfm$table
+    acc  <- round(cfm$overall[c("AccuracyLower","Accuracy","AccuracyUpper")] * 100,2)
+
+    kap  <- round(kappa_cm(observed = tmp$cinep, p_bin = tmp[[x]]),2)
+
+    return(list("table"    = t(tabs),
+                "accuracy" = acc,
+                "kappa"    = kap))
+  }, simplify = FALSE)
+
+  tab <- cbind(res$icews$table, res$ged$table)
+  colnames(tab) <- rep(c("No Event", "Event"),2)
+  rownames(tab) <- rep(c("No Event", "Event"),1)
+
+  acc <- data.frame(rbind(res$icews$accuracy,res$ged$accuracy)) %>%
+    mutate(CI = sprintf("[%s, %s]", AccuracyLower, AccuracyUpper)) %>%
+    select(Accuracy, CI)
+  rownames(acc) <- c("ICEWS","GED")
+
+  kap <- data.frame(rbind(res$icews$kappa,res$ged$kappa)) %>%
+    mutate(CI = sprintf("[%s, %s]", Kappa_lci, Kappa_uci)) %>%
+    select(Kappa, CI)
+  rownames(kap) <- c("ICEWS","GED")
+
+  print(tab);cat(rep("\n",2))
+  print(acc);cat(rep("\n",2))
+  print(kap);cat(rep("\n",2))
+  cat(rep("\n",6))
+};rm(cls, tmp, res, tab, acc, kap)
+#-----------------------------------------------------------------------------#
+
+
+
+
+#-----------------------------------------------------------------------------#
+# 3.	One event per year in time slice; add to 15 or 10  [6 tables total]
+#-----------------------------------------------------------------------------#
+for(cls in cl){
+  for(ysl in ys){
+    cat(sprintf("Class:%s\nYear-Slice:%s\n",cls,ysl))
+    cat("             ICEWS               GED              \n")
+
+    tmp <- confusion %>% filter(class == !!{cls},
+                                year_slice == !!{ysl}) %>%
+      select(cinep:ged) %>%
+      mutate(across(everything(), ~case_when(.x > 0 ~ 1, TRUE ~ 0))) %>%
+      mutate(across(everything(), ~factor(.x, levels = c("0","1"))))
+
+    res <- sapply(c("icews", "ged"), function(x){
+      cfm <- caret::confusionMatrix(data = tmp[[x]], reference = tmp$cinep, positive = "1")
+
+      tabs <- cfm$table
+      acc  <- round(cfm$overall[c("AccuracyLower","Accuracy","AccuracyUpper")] * 100,2)
+
+      kap  <- round(kappa_cm(observed = tmp$cinep, p_bin = tmp[[x]]),2)
+
+      return(list("table"    = t(tabs),
+                  "accuracy" = acc,
+                  "kappa"    = kap))
+    }, simplify = FALSE)
+
+    tab <- cbind(res$icews$table, res$ged$table)
+    colnames(tab) <- rep(c("No Event", "Event"),2)
+    rownames(tab) <- rep(c("No Event", "Event"),1)
+
+    acc <- data.frame(rbind(res$icews$accuracy,res$ged$accuracy)) %>%
+      mutate(CI = sprintf("[%s, %s]", AccuracyLower, AccuracyUpper)) %>%
+      select(Accuracy, CI)
+    rownames(acc) <- c("ICEWS","GED")
+
+    kap <- data.frame(rbind(res$icews$kappa,res$ged$kappa)) %>%
+      mutate(CI = sprintf("[%s, %s]", Kappa_lci, Kappa_uci)) %>%
+      select(Kappa, CI)
+    rownames(kap) <- c("ICEWS","GED")
+
+    print(tab);cat(rep("\n",2))
+    print(acc);cat(rep("\n",2))
+    print(kap);cat(rep("\n",2))
+    cat(rep("\n",6))
+  }
+};rm(cls, ysl, tmp, res, tab, acc, kap)
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# 4.	One event over time slice years; adds to 5	       [6 tables total]
+#-----------------------------------------------------------------------------#
+for(cls in cl){
+  for(ysl in ys){
+    cat(sprintf("Class:%s\nYear-Slice:%s\n",cls,ysl))
+    cat("             ICEWS               GED              \n")
+
+    tmp <- confusion %>% filter(class == !!{cls},
+                                year_slice == !!{ysl}) %>%
+      select(Municipality,cinep, icews, ged) %>%
+      group_by(Municipality) %>%
+      summarize(across(everything(), ~sum(.x))) %>%
+      ungroup() %>%
+      select(cinep:ged) %>%
+      mutate(across(everything(), ~case_when(.x > 0 ~ 1, TRUE ~ 0))) %>%
+      mutate(across(everything(), ~factor(.x, levels = c("0","1"))))
+
+    res <- sapply(c("icews", "ged"), function(x){
+      cfm <- caret::confusionMatrix(data = tmp[[x]], reference = tmp$cinep, positive = "1")
+
+      tabs <- cfm$table
+      acc  <- round(cfm$overall[c("AccuracyLower","Accuracy","AccuracyUpper")] * 100,2)
+
+      kap  <- round(kappa_cm(observed = tmp$cinep, p_bin = tmp[[x]]),2)
+
+      return(list("table"    = t(tabs),
+                  "accuracy" = acc,
+                  "kappa"    = kap))
+    }, simplify = FALSE)
+
+    tab <- cbind(res$icews$table, res$ged$table)
+    colnames(tab) <- rep(c("No Event", "Event"),2)
+    rownames(tab) <- rep(c("No Event", "Event"),1)
+
+    acc <- data.frame(rbind(res$icews$accuracy,res$ged$accuracy)) %>%
+      mutate(CI = sprintf("[%s, %s]", AccuracyLower, AccuracyUpper)) %>%
+      select(Accuracy, CI)
+    rownames(acc) <- c("ICEWS","GED")
+
+    kap <- data.frame(rbind(res$icews$kappa,res$ged$kappa)) %>%
+      mutate(CI = sprintf("[%s, %s]", Kappa_lci, Kappa_uci)) %>%
+      select(Kappa, CI)
+    rownames(kap) <- c("ICEWS","GED")
+
+    print(tab);cat(rep("\n",2))
+    print(acc);cat(rep("\n",2))
+    print(kap);cat(rep("\n",2))
+    cat(rep("\n",6))
+  }
+};rm(cls, ysl, tmp, res, tab, acc, kap)
+#-----------------------------------------------------------------------------#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # NOTE - ONLY USING 5 REMOTE, 5 NON-REMOTE MUNICIPALITIES FOR THESE PLOTS BELOW
