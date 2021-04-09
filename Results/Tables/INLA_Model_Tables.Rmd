@@ -1,14 +1,13 @@
 ---
-title: "INLA Models"
-author: "Logan Stundal"
-date: "4/9/2021"
+# title: "INLA Models"
+# author: "Logan Stundal"
+# date: "4/9/2021"
 output:
   bookdown::pdf_document2:
     keep_tex: no
+    toc: no
+    number_sections: false
     latex_engine: pdflatex
-header-includes:
-  # - \usepackage{ragged2e}
-  - \usepackage{lscape}
 ---
 
 ```{r setup, include=FALSE}
@@ -17,22 +16,84 @@ knitr::opts_chunk$set(cache      = FALSE,
                       out.width  = "100%",
                       dpi        = 350)
 
-load("INLA_MODS.Rdata")
+load("tidy-mods.Rdata")
+load("../Plots/coef-plot.Rdata")
+
+library(kableExtra)
+library(magrittr)
 ```
 
-\begin{landscape}
+
 ```{r}
-mods_tex$`2002-2004`
+
+custom_table <- function(data, cap){
+  kbl(x         = data,
+      caption   = cap,
+      escape    = FALSE,
+      col.names = linebreak(c("", "ICEWS", "GED", "CINEP", "ICEWS\nUnderreporing","GED\nUnderreporting"),
+                            align = "c"),
+      align     = c("l","c","c","c","c","c"),
+      position  = "!ht",
+      booktabs  = TRUE) %>%
+  kable_styling(font_size = 10) %>% 
+  collapse_rows(columns     = 1,
+                valign      = "middle",
+                latex_hline = "none") %>% 
+  row_spec(8,  extra_latex_after = "\\cline{1-6}") %>% 
+  row_spec(14, extra_latex_after = "\\cline{1-6}") 
+}
+
+tab_vals %<>%
+  dplyr::mutate(across(contains(c("icews","ged","cinep")),
+                       ~cell_spec(.x, font_size = ifelse(stringr::str_detect(.x, "\\["), 8, 10))))
 ```
 
-\newpage
+
+## 2002-2004
 ```{r}
-mods_tex$`2005-2007`
+cap <- "2002-2004"
+
+tmp <- tab_vals %>%
+  dplyr::filter(years == cap) %>% 
+  dplyr::select(-years)
+
+custom_table(data = tmp, cap = cap)
 ```
 
-\newpage
+
+## 2005-2007
 ```{r}
-mods_tex$`2008-2009`
+cap <- "2005-2007"
+tmp <- tab_vals %>%
+  dplyr::filter(years == cap) %>% 
+  dplyr::select(-years) 
+
+custom_table(data = tmp, cap = cap)
 ```
 
-\end{landscape}
+\pagebreak
+
+## 2008-2009
+```{r}
+cap <- "2008-2009"
+tmp <- tab_vals %>%
+  dplyr::filter(years == cap) %>% 
+  dplyr::select(-years) 
+
+custom_table(data = tmp, cap = cap)
+```
+
+
+
+\pagebreak
+
+## Coefficient Plot
+```{r, fig.width=6.5, fig.height=6.5}
+final_plot
+```
+
+
+
+
+
+
