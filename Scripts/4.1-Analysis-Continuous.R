@@ -30,6 +30,7 @@ rm(list = ls())
 # Load required packages
 #---------------------------#
 library(tidyverse)
+library(magrittr)
 library(sf)
 library(INLA)
 
@@ -37,7 +38,7 @@ library(INLA)
 # Load data
 #---------------------------#
 load("data/data_variables.RData")
-rm(colombia_cs, colombia_yg)
+rm(colombia_yg)
 
 #---------------------------#
 # Functions
@@ -61,8 +62,7 @@ colombia <- colombia_pn %>%
   group_by(Department, Municipality, yr_grp) %>%
   summarize(across(c(cinep, icews, ged), sum),
             across(c(distance_bogota_km_ln, terrain_ri_mean_m,
-                     centroid_mun_long, centroid_mun_lat,
-                     geometry), ~.x[1]),
+                     centroid_mun_long, centroid_mun_lat), ~.x[1]),
             pop_sum_ln = mean(pop_sum_ln),
             .groups = "keep") %>%
   ungroup() %>%
@@ -71,21 +71,38 @@ colombia <- colombia_pn %>%
          icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
 
          ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
-         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0)) %>%
-  st_set_geometry(., "geometry")
+         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0))
 
 rm(colombia_pn)
 # ----------------------------------- #
 
 
 # ----------------------------------- #
-# yr_grp ID
+# Bind cross section to "colombia" object for tidy model estimation
 # ----------------------------------- #
-# To use in many apply function calls below:
-yr_grp <- unique(colombia$yr_grp)
+colombia <- colombia_cs %>%
+  st_drop_geometry() %>%
+  mutate(yr_grp = "2002-2009") %>%
+  select(names(colombia)) %>%
+  bind_rows(colombia, .)
+
+rm(colombia_cs)
 # ----------------------------------- #
 
 
+# ----------------------------------- #
+# Tidy yr_grp variable and create ID
+# ----------------------------------- #
+# Tidy variable
+colombia %<>% mutate(yr_grp = factor(yr_grp,
+                                     levels = c("2002-2009",
+                                                "2002-2004",
+                                                "2005-2007",
+                                                "2008-2009")))
+
+# ID To use in many apply function calls below:
+yr_grp <- as.character(unique(colombia$yr_grp))
+# ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
@@ -181,8 +198,8 @@ inla_mods <- sapply(yr_grp, function(yr){
 #-----------------------------------------------------------------------------#
 # SAVE MODELS                                                             ----
 #-----------------------------------------------------------------------------#
-# save(inla_mods, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
-# rm(list=ls())
+save(inla_mods, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
+rm(list=ls())
 #-----------------------------------------------------------------------------#
 
 
