@@ -90,18 +90,19 @@ active_farc <- colombia_pn %>%
   mutate(
     x = as_factor(case_when(rank %in% 1:5 ~ "Journalistic Proximity",
                             TRUE ~ "Journalistic Remoteness")),
-    nx = case_when(Municipality %in% c("Ovejas", "San Luis","Samana","Alvarado","Dolores",
-                                       "San Francisco", "El Carmen de Bolivar")~ -1e6,
+    nx = case_when(Municipality %in% c("Ovejas", "San Luis","Alvarado","Dolores",
+                                       "El Carmen de Bolivar")~ -1e6,
                    TRUE ~ 1e6),
     ny = case_when(Municipality %in% c("El Carmen de Bolivar", "Valledupar",
                                        "Tibu","Arauca") ~ 1e6,
-                   Municipality %in% c("Alvarado","Dolores") ~ -1e6,
+                   Municipality == "Alvarado" ~ -1e6,
+                   Municipality == "Samana" ~ -6e5,
+                   Municipality == "San Francisco" ~ -2e5,
+                   Municipality == "Dolores" ~ -1.5e6,
                    TRUE ~ 0),
    LABEL = Municipality) %>%
-  mutate(nx = case_when(Municipality == "San Vicente del Caguan" ~ 5e5,
-                        TRUE ~ nx),
-         ny = case_when(Municipality == "Vista Hermosa" ~ - 1e6,
-                        TRUE ~ ny))
+  mutate(nx = case_when(Municipality %in% c("San Francisco", "Samana") ~ -2e6,
+                        TRUE ~ nx))
 # ----------------------------------- #
 
 
@@ -114,21 +115,21 @@ active_farc %>%
       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
                     "Pop. Density","Capital Dist.", "Class"))
 
-active_farc %>%
-  select(c(Department:capdist,x)) %>%
-  kbl(format = "latex", digits = 2,
-      col.names = c("Department","Municipality","CINEP","ICEWS","GED",
-                    "Pop. Density","Capital Dist.", "Class")) %>%
-  kable_classic_2(full_width = F) %>%
-  cat(., file = "Plots/EDA/CINEP-top-10-mun-table.txt")
+# active_farc %>%
+#   select(c(Department:capdist,x)) %>%
+#   kbl(format = "latex", digits = 2,
+#       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
+#                     "Pop. Density","Capital Dist.", "Class")) %>%
+#   kable_classic_2(full_width = F) %>%
+#   cat(., file = "Plots/EDA/CINEP-top-10-mun-table.txt")
 
-active_farc %>%
-  select(c(Department:capdist,x)) %>%
-  kbl(format = "html", digits = 2,
-      col.names = c("Department","Municipality","CINEP","ICEWS","GED",
-                    "Pop. Density","Capital Dist.", "Class")) %>%
-  kable_classic_2(full_width = F) %>%
-  save_kable(file = "Plots/EDA/CINEP-top-10-mun-table.html")
+# active_farc %>%
+#   select(c(Department:capdist,x)) %>%
+#   kbl(format = "html", digits = 2,
+#       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
+#                     "Pop. Density","Capital Dist.", "Class")) %>%
+#   kable_classic_2(full_width = F) %>%
+#   save_kable(file = "Plots/EDA/CINEP-top-10-mun-table.html")
 # ----------------------------------- #
 
 
@@ -140,45 +141,74 @@ active_farc <- colombia_pn %>%
   select(Department, Municipality) %>%
   left_join(., active_farc, by = c("Department", "Municipality"))
 
+
+bogota <- st_sf(data.frame(Name = "Bogota",
+                geom = st_sfc(st_point(c(-74.09854840698665,4.647941523654987)),
+                                 crs = "+proj=longlat"))) %>%
+  st_transform(., crs = st_crs(active_farc))
+
+
 mp <- ggplot(data = active_farc) +
-  geom_sf(aes(fill = x), color = "gray60", size = 0.05) +
-  scale_fill_discrete(na.value = "transparent") +
-  scale_x_continuous(limits = c(-2.6e6,-788433.7)) +
+  geom_sf(aes(fill = x), color = "gray50", size = 0.05) +
+  geom_sf(data = bogota, shape = "\u2b50", size = 10, aes(fill = "Bogota")) +
+  scale_fill_manual(values       = c("white","#00bfc4", "#f8766d"),
+                    na.value     = "transparent",
+                    na.translate = FALSE) +
+  guides(fill = guide_legend(override.aes = list(shape    = c("", "", "\u2b50"),
+                                                 size     = rep((10 / .pt),3),
+                                                 linetype = rep("blank",3) ),
+                             nrow    = 2,
+                             byrow   = TRUE,
+                             reverse = TRUE) ) +
+  scale_x_continuous(limits = c(-2.8e6,-6.5e5)) +
   scale_y_continuous(limits = c(3157019.2, 5e6)) +
   theme_minimal() +
   theme(panel.grid = element_blank(),
         legend.position  = "bottom",
         legend.direction = "horizontal",
         legend.title     = element_blank(),
-        legend.text      = element_text(size = 6),
-        legend.key.size  = unit(3, "mm"),
         axis.title       = element_blank(),
         axis.text        = element_blank(),
-        text             = element_text(size = 8),
-        plot.title       = element_text(size = 7),
-        plot.subtitle    = element_text(size = 6)) +
-  scale_fill_discrete(na.translate = FALSE) +
+        plot.title       = element_text(size = (12 / .pt), hjust = 0),
+        plot.subtitle    = element_text(size = (10 / .pt))) +
+  # labs(title = "Remoteness: Distance for international journalists traveling from Bogota",
+       # subtitle = "Top 10 Colombain municipalities based on CINEP-reported FARC activities") +
   ggrepel::geom_label_repel(
     aes(label = LABEL, geometry = geometry),
-    label.size = 0.1,
-    size = 1.5,
+    label.size = NA,
+    fill = "transparent",
+    size = (10 / .pt),
+    segment.size = 0.25,
+    segment.color = "gray40",
+    segment.linetype = "dashed",
     stat = "sf_coordinates",
     nudge_x = active_farc$nx,
     nudge_y = active_farc$ny,
     na.rm   = TRUE,
     box.padding = .25,
-    force = 50
-  ) +
-  labs(title = "Remoteness: Distance for international journalists traveling from Bogota",
-       subtitle = "Top 10 Colombain municipalities based on CINEP-reported FARC activities")
+    force = 1
+  )
+
 # mp
 ggsave(filename = sprintf("Plots/EDA/CINEP-top-10-mun-map-%s.png",d),
        plot     = mp,
        units    = "in",
-       width    = 4.5,
-       height   = 4.5,
+       width    = 5.0,
+       height   = 5.5,
+       dpi      = 340)
+
+# saving also as an rdata obj to "results/table" dir to see how it looks in pdf
+# save(mp, file = "Results/Tables/CO-Map.Rdata")
+
+# So... of course latex does not support the unicode star in the ggplot object.
+ggsave(filename = "Results/Tables/Map.png",
+       plot     = mp,
+       units    = "in",
+       width    = 4.0,
+       height   = 4.0,
        dpi      = 340)
 # ----------------------------------- #
+
 rm(active_farc, mp)
 #-----------------------------------------------------------------------------#
 

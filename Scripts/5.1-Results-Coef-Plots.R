@@ -54,50 +54,83 @@ custom_theme <-
 custom_plot <- function(data){
   ggplot(data = data,
          aes(y = y)) +
-    geom_point(aes(x = median, color = model), size = 0.5) +
+    geom_point(aes(x = x, color = model), size = 0.5) +
     geom_errorbar(aes(xmin = lb, xmax = ub, color = model), width = 0.1, size = 0.2) +
+    scale_color_manual(values = {{mod_cols}}) +
     facet_wrap(~years, ncol = 3) +
     # geom_segment(aes(x = 0, y = 0.7, xend = 0, yend = 3.3),
     #              linetype = "dashed", color = "gray50", size = 0.4) +
     custom_theme
 }
-
 #-----------------------------------------------------------------------------#
 
 
 
 #-----------------------------------------------------------------------------#
-# COEFFICIENT PLOTS CONSTRUCTION                                          ----
+# COEFFICIENT PLOTS DATA                                                  ----
 #-----------------------------------------------------------------------------#
 
 # ----------------------------------- #
 # Tidy data for plotting
 # ----------------------------------- #
-g <- tidy_vals %>% filter(!str_detect(model, pattern = "_under"),
-                          variable != "intercept") %>%
+g <- tidy_vals %>%
+  filter(variable != "intercept") %>%
   dplyr::select(variable:years) %>%
-  mutate(type = case_when(variable %in% c("Kappa","Sigma","Range") ~ variable,
-                          TRUE ~ "Structural"),
+  mutate(type_var = case_when(variable %in% c("Kappa","Sigma","Range") ~ variable,
+                              TRUE                                     ~ "Structural"),
+         type_mod = case_when(str_detect(model, "_bin") ~ "Event",
+                              TRUE                      ~ "Under"),
+         model = case_when(str_starts(model, "cinep") ~ "CINEP",
+                           str_starts(model, "icews") ~ "ICEWS",
+                           str_starts(model, "ged")   ~ "GED"),
          y = case_when(variable == "dist"      ~ 1,
                        variable == "pop"       ~ 2,
                        variable == "tri"       ~ 3,
-                       # variable == "intercept" ~ 1,
                        TRUE                    ~ 1)) %>%
-  mutate(type = factor(type, levels = c("Structural","Kappa","Sigma","Range")),
-         y = case_when(model == "icews_bin" ~ y - 0.2,
-                       model == "ged_bin"   ~ y + 0.2,
+  mutate(type_var = factor(type_var, levels = c("Structural","Kappa","Sigma","Range")),
+         y = case_when(str_detect(model, "ICEWS") ~ y - 0.2,
+                       str_detect(model, "GED")   ~ y + 0.2,
                        TRUE ~ y),
-         model = case_when(str_detect(model, "cinep") ~ "CINEP",
-                           str_detect(model, "icews") ~ "ICEWS",
-                           str_detect(model, "ged")   ~ "GED")) %>%
-  mutate(model = factor(model, levels = c("CINEP","ICEWS","GED")))
+         model = factor(model, levels = c("CINEP","ICEWS","GED")),
+         years = factor(years, levels = c("2002-2009", "2002-2004", "2005-2007", "2008-2009")))
 # ----------------------------------- #
 
 
+# ----------------------------------- #
+# TIDY g
+# ----------------------------------- #
+g %<>% filter(years != "2008-2009") %>% mutate(years = fct_drop(years))
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Set "x" - to centrality measure (cent) for plotting
+# ----------------------------------- #
+g %<>% mutate(x = !!sym(cent))
+# ----------------------------------- #
+
+
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# Consistent color settings for comparisons
+#-----------------------------------------------------------------------------#
+mod_cols        <- c("#00bfc4", "#f8766d", "#7cae00")
+names(mod_cols) <- unique(g$model)
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# CONSTRUCT PLOTS - OBSERVED EVENTS                                       ----
+#-----------------------------------------------------------------------------#
 # ----------------------------------- #
 # Structural parameters
 # ----------------------------------- #
-structural <- custom_plot(data = g %>% filter(type == "Structural")) +
+event_structural <- custom_plot(data = g %>% filter(type_var == "Structural",
+                                                    type_mod == "Event")) +
   scale_y_continuous(breaks = 1:3,
                      labels = c("Dist. Bogota, km (log)", "Population (log)", "TRI"))
 # ----------------------------------- #
@@ -106,21 +139,23 @@ structural <- custom_plot(data = g %>% filter(type == "Structural")) +
 # ----------------------------------- #
 # SPDE parameters
 # ----------------------------------- #
-# SIGMA
-spde_sigma <- custom_plot(data = g %>% filter(variable == "Sigma")) +
-  scale_y_continuous(breaks = 1, labels = "Sigma") +
-  theme(strip.background = element_blank(),
-        strip.text.x     = element_blank())
-
 # KAPPA
-spde_kappa <- custom_plot(data = g %>% filter(variable == "Kappa")) +
+event_spde_kappa <- custom_plot(data = g %>% filter(type_var == "Kappa",
+                                                    type_mod == "Event")) +
   scale_y_continuous(breaks = 1, labels = "Kappa") +
   theme(strip.background = element_blank(),
         strip.text.x     = element_blank())
 
+# SIGMA
+event_spde_sigma <- custom_plot(data = g %>% filter(type_var == "Sigma",
+                                                    type_mod == "Event")) +
+  scale_y_continuous(breaks = 1, labels = "Sigma") +
+  theme(strip.background = element_blank(),
+        strip.text.x     = element_blank())
 
 # RANGE
-spde_range <- custom_plot(data = g %>% filter(variable == "Range")) +
+event_spde_range <- custom_plot(data = g %>% filter(type_var == "Range",
+                                                    type_mod == "Event")) +
   scale_y_continuous(breaks = 1, labels = "Range") +
   theme(strip.background = element_blank(),
         strip.text.x     = element_blank(),
@@ -128,24 +163,86 @@ spde_range <- custom_plot(data = g %>% filter(variable == "Range")) +
         legend.direction = "horizontal",
         legend.title     = element_blank())
 
-
 # LEGEND (extract from Range and update range to no legend)
-leg        <- get_legend(spde_range)
-spde_range <- spde_range + theme(legend.position = "none")
+leg              <- get_legend(event_spde_range)
+event_spde_range <- event_spde_range + theme(legend.position = "none")
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# FULL PLOT
+# ----------------------------------- #
+event_final_plot <- plot_grid(event_structural,
+                              event_spde_kappa,
+                              event_spde_sigma,
+                              event_spde_range,leg,
+                              rel_heights = c(3, 1, 1, 1, .3),
+                              nrow  = 5,
+                              align = "v",
+                              axis  = "l")
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
 
 #-----------------------------------------------------------------------------#
-# CONSTRUCT FULL PLOT                                                     ----
+# CONSTRUCT PLOTS - UNDERREPORTING EVENTS                                 ----
 #-----------------------------------------------------------------------------#
+# ----------------------------------- #
+# Structural parameters
+# ----------------------------------- #
+under_structural <- custom_plot(data = g %>% filter(type_var == "Structural",
+                                                    type_mod == "Under")) +
+  scale_y_continuous(breaks = 1:3,
+                     labels = c("Dist. Bogota, km (log)", "Population (log)", "TRI"))
+# ----------------------------------- #
 
-final_plot <- plot_grid(structural, spde_sigma, spde_kappa, spde_range,leg,
-                        rel_heights = c(3, 1, 1, 1, .3),
-                        nrow  = 5,
-                        align = "v",
-                        axis  = "l")
+
+# ----------------------------------- #
+# SPDE parameters
+# ----------------------------------- #
+# KAPPA
+under_spde_kappa <- custom_plot(data = g %>% filter(type_var == "Kappa",
+                                                    type_mod == "Under")) +
+  scale_y_continuous(breaks = 1, labels = "Kappa") +
+  theme(strip.background = element_blank(),
+        strip.text.x     = element_blank())
+
+# SIGMA
+under_spde_sigma <- custom_plot(data = g %>% filter(type_var == "Sigma",
+                                                    type_mod == "Under")) +
+  scale_y_continuous(breaks = 1, labels = "Sigma") +
+  theme(strip.background = element_blank(),
+        strip.text.x     = element_blank())
+
+# RANGE
+under_spde_range <- custom_plot(data = g %>% filter(type_var == "Range",
+                                                    type_mod == "Under")) +
+  scale_y_continuous(breaks = 1, labels = "Range") +
+  theme(strip.background = element_blank(),
+        strip.text.x     = element_blank(),
+        legend.position  = "bottom",
+        legend.direction = "horizontal",
+        legend.title     = element_blank())
+
+# LEGEND (extract from Range and update range to no legend)
+leg              <- get_legend(under_spde_range)
+under_spde_range <- under_spde_range + theme(legend.position = "none")
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# FULL PLOT
+# ----------------------------------- #
+under_final_plot <- plot_grid(under_structural,
+                              under_spde_kappa,
+                              under_spde_sigma,
+                              under_spde_range,leg,
+                              rel_heights = c(3, 1, 1, 1, .3),
+                              nrow  = 5,
+                              align = "v",
+                              axis  = "l")
+# ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
@@ -153,15 +250,25 @@ final_plot <- plot_grid(structural, spde_sigma, spde_kappa, spde_range,leg,
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-# ggsave(filename = "Results/Plots/coef-plot.png",
-#        width    = 6.5,
-#        height   = 6.5,
-#        units    = "in",
-#        dpi      = 380)
-#
-# save(final_plot, file = "Results/Plots/coef-plot.Rdata")
-#
-# rm(list = ls())
+ggsave(filename = "Results/Plots/coef-plot-event.png",
+       plot     = event_final_plot,
+       width    = 6.5,
+       height   = 6.5,
+       units    = "in",
+       dpi      = 380)
+
+ggsave(filename = "Results/Plots/coef-plot-under.png",
+       plot     = under_final_plot,
+       width    = 6.5,
+       height   = 6.5,
+       units    = "in",
+       dpi      = 380)
+
+save(event_final_plot,
+     under_final_plot,
+     file = "Results/Plots/coef-plot.Rdata")
+
+rm(list = ls())
 #-----------------------------------------------------------------------------#
 
 

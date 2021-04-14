@@ -198,7 +198,7 @@ inla_mods <- sapply(yr_grp, function(yr){
 #-----------------------------------------------------------------------------#
 # SAVE MODELS                                                             ----
 #-----------------------------------------------------------------------------#
-save(inla_mods, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
+save(inla_mods, colombia, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
 rm(list=ls())
 #-----------------------------------------------------------------------------#
 

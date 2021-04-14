@@ -43,58 +43,92 @@ load("Results/inla-mods.Rdata")
 #---------------------------#
 # Functions
 #---------------------------#
-qoi <- function(mod_list){
+qoi <- function(mod_list, centrality = "mean"){
   # Takes an inla model list and returns a list containing quantities
   # of interest
-  inla_betas <- lapply(mod_list, function(mod){
-    round(mod$summary.fixed[,c("0.5quant","0.025quant","0.975quant")],3) %>%
-      as.data.frame() %>%
-      rename(median = `0.5quant`,
-             lb     = `0.025quant`,
-             ub     = `0.975quant`) %>%
-      rownames_to_column(var = "variable")
-  })
 
+  # ----------------------------------- #
+  # Extract partials from structural model
+  # ----------------------------------- #
+  inla_betas <- lapply(mod_list, function(mod){
+    tmp <- round(mod$summary.fixed[,c(ifelse(centrality == "mean", "mean", "0.5quant"),
+                               "0.025quant","0.975quant")],3) %>%
+      as.data.frame()
+
+    if(centrality == "mean"){
+      tmp %<>% rename(mean = `mean`,
+                      lb   = `0.025quant`,
+                      ub   = `0.975quant`) %>%
+        rownames_to_column(var = "variable")
+    } else if(centrality == "median"){
+      tmp %<>% rename(median = `0.5quant`,
+                      lb     = `0.025quant`,
+                      ub     = `0.975quant`) %>%
+        rownames_to_column(var = "variable")
+    } else{
+      stop("Centrality parameter must be one of: 'median' or 'mean'.")
+    }
+  })
+  # ----------------------------------- #
+
+  # ----------------------------------- #
+  # Extract hyper-parameters
+  # ----------------------------------- #
   inla_hyper <- lapply(mod_list, function(mod, round_digits = 3){
     spde_pars <- inla.spde2.result(inla = mod,
                                    name = "spatial.field",
                                    spde,do.transform = TRUE)
+  # ----------------------------------- #
 
-    # Kappa
-    # Kappa    <- inla.emarginal(function(x) x, spde_pars$marginals.kappa[[1]])  # kappa (mean)
-    Kappa    <- inla.qmarginal(0.50, spde_pars$marginals.kappa[[1]])         # kappa (median)
+    # ----------------------------------- #
+    # Tidy hyper-parameter centrality measures
+    # ----------------------------------- #
+    if(centrality == "median"){
+      Kappa    <- inla.qmarginal(0.50, spde_pars$marginals.kappa[[1]])                     # kappa (median)
+      Sigma    <- inla.qmarginal(0.50, spde_pars$marginals.variance.nominal[[1]])          # variance (median)
+      Range    <- inla.qmarginal(0.50, spde_pars$marginals.range.nominal[[1]])             # range (median)
+    } else if(centrality == "mean"){
+      Kappa    <- inla.emarginal(function(x) x, spde_pars$marginals.kappa[[1]])            # kappa (mean)
+      Sigma    <- inla.emarginal(function(x) x, spde_pars$marginals.variance.nominal[[1]]) # variance (mean)
+      Range    <- inla.emarginal(function(x) x, spde_pars$marginals.range.nominal[[1]])    # range (mean)
+    } else{
+      stop("Centrality parameter must be one of: 'median' or 'mean'.")
+    }
+    # ----------------------------------- #
+
+    # ----------------------------------- #
+    # Extract HPDs
+    # ----------------------------------- #
     Kappahpd <- inla.hpdmarginal(0.95, spde_pars$marginals.kappa[[1]])         # kappa (hpd 95%)
-
-    # Sigma
-    # Sigma    <- inla.emarginal(function(x) x, spde_pars$marginals.variance.nominal[[1]]) # variance (mean)
-    Sigma    <- inla.qmarginal(0.50, spde_pars$marginals.variance.nominal[[1]])        # variance (median)
     Sigmahpd <- inla.hpdmarginal(0.95, spde_pars$marginals.variance.nominal[[1]])        # variance (hpd 95%)
-
-    # Range
-    # Range    <- inla.emarginal(function(x) x, spde_pars$marginals.range.nominal[[1]]) # range (mean)
-    Range    <- inla.qmarginal(0.50, spde_pars$marginals.range.nominal[[1]])        # range (median)
     Rangehpd <- inla.hpdmarginal(0.95, spde_pars$marginals.range.nominal[[1]])        # range (hpd 95%)
+    # ----------------------------------- #
 
+    # ----------------------------------- #
     # Convert range to km (degrees = 2*pi*6371/360)
+    # ----------------------------------- #
     Range    <- Range * 2*pi*6371/360
     Rangehpd <- Rangehpd * 2*pi*6371/360
+    # ----------------------------------- #
 
+    # ----------------------------------- #
+    # Tidy up return object
+    # ----------------------------------- #
     df <- rbind(cbind(Kappa, Kappahpd),
                 cbind(Sigma, Sigmahpd),
                 cbind(Range, Rangehpd)) %>%
       as.data.frame()
 
-    colnames(df) <- c("median","lb","ub")
+    colnames(df) <- c(centrality,"lb","ub")
     rownames(df) <- 1:nrow(df)
     df$variable  <- c("Kappa","Sigma","Range")
-
+    # ----------------------------------- #
     return(df)
   })
 
   inla_lliks <- lapply(mod_list, function(mod){
     mod$mlik[1]
   })
-
   return(list("betas" = inla_betas,
               "hyper" = inla_hyper,
               "lliks" = inla_lliks))
@@ -104,11 +138,17 @@ qoi <- function(mod_list){
 
 
 #-----------------------------------------------------------------------------#
+# SPECIFY PREFERRED CENTRALITY MEASURE                                    ----
+#-----------------------------------------------------------------------------#
+cent <- "median"
+#-----------------------------------------------------------------------------#
+
+#-----------------------------------------------------------------------------#
 # QOI                                                                     ----
 #-----------------------------------------------------------------------------#
 # Extract quantities-of-interest: regression coefficients and hyperparameters
 res_vals <- sapply(yr_grp, function(x){
-  qoi(inla_mods[[x]])
+  qoi(inla_mods[[x]], centrality = cent)
 }, simplify = F)
 #-----------------------------------------------------------------------------#
 
@@ -147,12 +187,12 @@ tidy_vals <- bind_rows(tidy_vals)
 # MODEL TIDY PARAMS                                                       ----
 #-----------------------------------------------------------------------------#
 tab_vals <- tidy_vals %>%
-  mutate(across(c(median, lb, ub, lliks),
+  mutate(across(c(!!cent, lb, ub, lliks),
                 ~format(round(.x, 3), nsmall = 3))) %>%
   mutate(hpd = sprintf("[%s, %s]", lb, ub)) %>%
-  select(variable, median, hpd, model, years) %>%
+  select(variable, !!cent, hpd, model, years) %>%
   pivot_longer(.,
-               cols     = c(median, hpd),
+               cols     = c(!!cent, hpd),
                names_to = "type") %>%
   pivot_wider(.,
               id_cols = c(variable, type, years),
@@ -196,8 +236,8 @@ rm(lliks_n)
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-save(tab_vals, tidy_vals, file = "Results/Tables/tidy-mods.Rdata")
-#rm(list = ls())
+save(tab_vals, tidy_vals, cent, file = "Results/Tables/tidy-mods.Rdata")
+rm(list = ls())
 #-----------------------------------------------------------------------------#
 
 
