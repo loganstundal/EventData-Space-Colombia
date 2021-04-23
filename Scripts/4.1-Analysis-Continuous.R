@@ -103,6 +103,17 @@ colombia %<>% mutate(yr_grp = factor(yr_grp,
 # ID To use in many apply function calls below:
 yr_grp <- as.character(unique(colombia$yr_grp))
 # ----------------------------------- #
+
+
+# ----------------------------------- #
+# Arrange data for lat-long alignment
+# ----------------------------------- #
+dat <- sapply(yr_grp, function(x){
+  colombia %>% filter(yr_grp == x) %>%
+    arrange(Department, Municipality, yr_grp)
+}, simplify = FALSE)
+# ----------------------------------- #
+rm(colombia)
 #-----------------------------------------------------------------------------#
 
 
@@ -114,7 +125,7 @@ yr_grp <- as.character(unique(colombia$yr_grp))
 # ----------------------------------- #
 # Mesh setup - same for all years
 # ----------------------------------- #
-tmp <- colombia %>%  filter(yr_grp == "2002-2004")
+tmp <- dat$`2002-2004`
 
 # Coordinates for mesh - key for prior construction in SPDE models.
 colcoord <- cbind(tmp$centroid_mun_long,
@@ -154,7 +165,7 @@ dvs <- c(
 # INLA Stacks
 stacks <- sapply(yr_grp, function(x){
 
-  tmp <- colombia %>%  filter(yr_grp == x)
+  tmp <- dat[[x]]
 
   tmp_stack <- sapply(dvs, function(x){
     inla.stack(data    = list(y = tmp[[x]]),
@@ -198,7 +209,7 @@ inla_mods <- sapply(yr_grp, function(yr){
 #-----------------------------------------------------------------------------#
 # SAVE MODELS                                                             ----
 #-----------------------------------------------------------------------------#
-save(inla_mods, colombia, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
+save(inla_mods, dat, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
 rm(list=ls())
 #-----------------------------------------------------------------------------#
 
