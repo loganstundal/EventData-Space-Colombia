@@ -178,6 +178,14 @@ stacks <- sapply(yr_grp, function(x){
                tag='spde')
   }, simplify = F)
 }, simplify = F)
+
+# For future help on this model, see:
+# m <- inla.models()
+# m$latent$spde2$doc
+# m$latent$spde2$pdf
+
+inla.doc("matern2d")
+# ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
