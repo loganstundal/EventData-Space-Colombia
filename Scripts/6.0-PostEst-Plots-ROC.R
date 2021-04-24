@@ -269,6 +269,10 @@ dv_yr <- expand.grid(dvs, yr_grp) %>%
   mutate(x = paste(Var1, Var2, sep = ".")) %>%
   pull(x)
 
+# Reconstruct a full panel.
+colombia <- bind_rows(dat)
+
+# Calculate rocs
 rocs <- sapply(dv_yr, function(x){
   tmp    <- str_split(x, "[.]")
   tmp_dv <- tmp[[1]][1]
