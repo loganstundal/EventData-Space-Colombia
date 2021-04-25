@@ -206,58 +206,140 @@ local_roc_plot <- function(roc_list,
   # ----------------------------------- #
 }
 
-local_prc_plot <- function(roc_list,
-                           title      = NULL,
-                           title.size = 14,
-                           text.size  = 12){
+# local_prc_plot <- function(roc_list,
+#                            title      = NULL,
+#                            title.size = 14,
+#                            text.size  = 12){
+#
+#   if(is.null(names(roc_list))){
+#     stop("Function requires a named list for plot formatting.")
+#   }
+#
+#   # ----------------------------------- #
+#   # Description
+#   # ----------------------------------- #
+#   # This function takes a list of roc objects returned from local_roc()
+#   # and returns a precision-recall plot. Note, I don't know how to est.
+#   # standard errors for these stats yet.
+#   # ----------------------------------- #
+#
+#   # ----------------------------------- #
+#   # Tidy data
+#   # ----------------------------------- #
+#   plt_dat  <- roc_list %>% map("roc_est")
+#
+#   plt_dat <- sapply(plt_dat, function(x){
+#     x %<>% coords(ret = "all", transpose = FALSE) %>%
+#       dplyr::select(precision, recall)
+#   }, simplify = FALSE) %>%
+#     bind_rows(.id = "Model")
+#   # ----------------------------------- #
+#
+#   # ----------------------------------- #
+#   # Create plot
+#   # ----------------------------------- #
+#   prc <- ggplot(data = plt_dat,
+#                 aes(y = precision, x = recall, color = Model)) +
+#     geom_line() +
+#     scale_y_continuous("Precision",
+#                        limits = c(0,1),
+#                        labels = scales::percent) +
+#     scale_x_continuous("Recall",
+#                        limits = c(0,1),
+#                        labels = scales::percent) +
+#     local_theme(title.size, text.size) +
+#     labs(title = title)
+#   # ----------------------------------- #
+#
+#   # ----------------------------------- #
+#   # Return statement
+#   # ----------------------------------- #
+#   return(prc)
+#   # ----------------------------------- #
+# }
 
-  if(is.null(names(roc_list))){
-    stop("Function requires a named list for plot formatting.")
+prc_dat <- function(model_list, true_values){
+  # ----------------------------------- #
+  # Setup
+  # ----------------------------------- #
+  thresh  <- seq(0,1,length.out = 200)
+  n       <- length(true_values)
+  plt_dat <- data.frame()
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Estimate values
+  # ----------------------------------- #
+  for(g in c("icews", "ged")){
+    dv = sprintf("%s_bin", g)
+
+    model_linear_predictor <- pnorm(model_list[[dv]]$summary.linear.predictor[1:1116,'mean'])
+
+    for (i in 1:length(thresh)) {
+
+      z = ifelse(model_linear_predictor >= thresh[i], 1, 0)
+      x = table(z,true_values)
+
+      tn = tryCatch(
+        expr  = {x['0','0']},
+        error = function(e){0}
+      )
+
+      tp = tryCatch(
+        expr  = {x['1','1']},
+        error = function(e){0}
+      )
+
+      fp = tryCatch(
+        expr  = {x['1','0']},
+        error = function(e){0}
+      )
+
+      fn = tryCatch(
+        expr  = {x['0','1']},
+        error = function(e){0}
+      )
+
+      prec = tp / (tp + fp)
+      prec_se = sqrt((prec * (1 - prec))/ (n + 4))
+      prec_lb = prec - 1.96 * prec_se
+      prec_ub = prec + 1.96 * prec_se
+
+      recc = tp / (tp + fn)
+
+      tmp_dat <- data.frame(
+        "Re"    = recc,
+        "Pr"    = prec,
+        "Pr_lb" = prec_lb,
+        "Pr_ub" = prec_ub,
+        "Group" = stringr::str_to_upper(g)
+      )
+      plt_dat <- bind_rows(plt_dat, tmp_dat)
+    }
   }
-
-  # ----------------------------------- #
-  # Description
-  # ----------------------------------- #
-  # This function takes a list of roc objects returned from local_roc()
-  # and returns a precision-recall plot. Note, I don't know how to est.
-  # standard errors for these stats yet.
   # ----------------------------------- #
 
-  # ----------------------------------- #
-  # Tidy data
-  # ----------------------------------- #
-  plt_dat  <- roc_list %>% map("roc_est")
-
-  plt_dat <- sapply(plt_dat, function(x){
-    x %<>% coords(ret = "all", transpose = FALSE) %>%
-      dplyr::select(precision, recall)
-  }, simplify = FALSE) %>%
-    bind_rows(.id = "Model")
-  # ----------------------------------- #
 
   # ----------------------------------- #
-  # Create plot
+  # Tidy results
   # ----------------------------------- #
-  prc <- ggplot(data = plt_dat,
-                aes(y = precision, x = recall, color = Model)) +
-    geom_line() +
-    scale_y_continuous("Precision",
-                       limits = c(0,1),
-                       labels = scales::percent) +
-    scale_x_continuous("Recall",
-                       limits = c(0,1),
-                       labels = scales::percent) +
-    local_theme(title.size, text.size) +
-    labs(title = title)
+  tmp<-plt_dat %>%
+    mutate(Pr_lb = case_when(is.nan(Pr_lb) & Pr == 1 ~ 1,
+                             is.nan(Pr_lb) & Pr == 0 ~ 0,
+                             TRUE ~ Pr_lb),
+           Pr_ub = case_when(is.nan(Pr_ub) & Pr == 1 ~ 1,
+                             is.nan(Pr_ub) & Pr == 0 ~ 0,
+                             TRUE ~ Pr_ub))
   # ----------------------------------- #
+
 
   # ----------------------------------- #
   # Return statement
   # ----------------------------------- #
-  return(prc)
+  return(plt_dat)
   # ----------------------------------- #
 }
-
 #-----------------------------------------------------------------------------#
 
 
@@ -375,6 +457,25 @@ ggsave(filename = "Results/Plots/roc-under.png",
 #-----------------------------------------------------------------------------#
 # PRECISION RECALL CURVES                                                 ----
 #-----------------------------------------------------------------------------#
+
+
+tst <- prc_dat(model_list  = inla_mods$`2002-2009`,
+               true_values = dat$`2002-2009`$cinep_bin)
+
+
+
+
+ggplot(data = tst) +
+  geom_ribbon(aes(x = Re, ymin = Pr_lb, ymax = Pr_ub, fill = Group), alpha = .5) +
+  geom_line(aes(x = Re, y = Pr, color = Group), size = 0.25) +
+  labs(title = "SPDE Models, Precision-Recall Curves",
+       x     = "Recall",
+       y     = "Precision") +
+  scale_color_manual("Group", values = c('black','black')) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_x_continuous(labels = scales::percent_format()) +
+  local_theme(title.size, text.size)
+
 # ----------------------------------- #
 # Observed event models
 # ----------------------------------- #

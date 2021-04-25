@@ -68,9 +68,11 @@ colombia <- colombia_pn %>%
   ungroup() %>%
   mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}_bin")) %>%
   mutate(icews_cinep_under = case_when(icews_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         icews_cinep_over  = case_when(icews_bin == 1 & cinep_bin == 0 ~ 1, TRUE ~ 0),
          icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
 
          ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         ged_cinep_over    = case_when(ged_bin == 1 & cinep_bin == 0 ~ 1, TRUE ~ 0),
          ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0))
 
 rm(colombia_pn)
@@ -82,6 +84,13 @@ rm(colombia_pn)
 # ----------------------------------- #
 colombia <- colombia_cs %>%
   st_drop_geometry() %>%
+  mutate(icews_cinep_under = case_when(icews_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         icews_cinep_over  = case_when(icews_bin == 1 & cinep_bin == 0 ~ 1, TRUE ~ 0),
+         icews_cinep_bias  = case_when(icews_bin != cinep_bin ~ 1, TRUE ~ 0),
+
+         ged_cinep_under   = case_when(ged_bin == 0 & cinep_bin == 1 ~ 1, TRUE ~ 0),
+         ged_cinep_over    = case_when(ged_bin == 1 & cinep_bin == 0 ~ 1, TRUE ~ 0),
+         ged_cinep_bias    = case_when(ged_bin != cinep_bin ~ 1, TRUE ~ 0)) %>%
   mutate(yr_grp = "2002-2009") %>%
   select(names(colombia)) %>%
   bind_rows(colombia, .)
@@ -215,9 +224,16 @@ inla_mods <- sapply(yr_grp, function(yr){
 
 
 #-----------------------------------------------------------------------------#
+# COLOR VECTOR LIST FOR CONSISTENT PLOT COLORING                          ----
+#-----------------------------------------------------------------------------#
+model_colors <- viridis::viridis(n = 8)[c(1,3,5)]
+#-----------------------------------------------------------------------------#
+
+#-----------------------------------------------------------------------------#
 # SAVE MODELS                                                             ----
 #-----------------------------------------------------------------------------#
-save(inla_mods, dat, spde, dvs, yr_grp, file = "Results/inla-mods.RData")
+save(inla_mods, dat, spde, dvs, yr_grp, model_colors,
+     file = "Results/inla-mods.RData")
 rm(list=ls())
 #-----------------------------------------------------------------------------#
 
