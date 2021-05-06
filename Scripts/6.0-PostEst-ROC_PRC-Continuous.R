@@ -49,7 +49,7 @@ local_theme <- function(title.size, text.size){
         legend.position  = "bottom",
         legend.direction = "horizontal",
         legend.title     = element_blank(),
-        legend.key.size  = unit(2, "mm"),
+        legend.key.size  = unit(3, "mm"),
         plot.title       = element_text(size  = ({{title.size}} / .pt)),
         text             = element_text(size  = ({{text.size}}  / .pt)),
         panel.background = element_rect(fill  = NA,
@@ -167,6 +167,7 @@ local_roc_plot <- function(roc_list,
               size = 0.25) +
     geom_abline(intercept = 0, slope = 1, linetype = 'dashed', colour = 'gray80') +
     scale_color_manual("Model", values = rep('black',n)) +
+    scale_fill_manual(values = {{model_colors}}) +
     scale_y_continuous("True Positive Rate",
                        labels = scales::percent_format(),
                        expand = c(0.005,0.005)) +
@@ -181,8 +182,8 @@ local_roc_plot <- function(roc_list,
     lab <- apply(auc_vals,1, function(x){
       sprintf("%s: %s [95%% CI: %s - %s]\n",
               x["model"],
-              x["mean"],
               x["lb"],
+              x["mean"],
               x["ub"])
     }) %>%
       c("AUC:\n",.) %>%
@@ -206,11 +207,7 @@ local_roc_plot <- function(roc_list,
   # ----------------------------------- #
 }
 
-# local_prc_plot <- function(roc_list,
-#                            title      = NULL,
-#                            title.size = 14,
-#                            text.size  = 12){
-#
+# local_prc_plot <- function(roc_list, title = NULL, title.size = 14, text.size  = 12){
 #   if(is.null(names(roc_list))){
 #     stop("Function requires a named list for plot formatting.")
 #   }
@@ -258,88 +255,103 @@ local_roc_plot <- function(roc_list,
 #   # ----------------------------------- #
 # }
 
-prc_dat <- function(model_list, true_values){
-  # ----------------------------------- #
-  # Setup
-  # ----------------------------------- #
-  thresh  <- seq(0,1,length.out = 200)
-  n       <- length(true_values)
-  plt_dat <- data.frame()
-  # ----------------------------------- #
+# prc_dat <- function(model_list, true_values){
+#   # ----------------------------------- #
+#   # Setup
+#   # ----------------------------------- #
+#   thresh  <- seq(0,1,length.out = 200)
+#   n       <- length(true_values)
+#   plt_dat <- data.frame()
+#   dvs     <- names(model_list)
+#   # ----------------------------------- #
+#
+#
+#   # ----------------------------------- #
+#   # Estimate values
+#   # ----------------------------------- #
+#   for(dv in dvs){
+#
+#     model_linear_predictor <- pnorm(model_list[[dv]]$summary.linear.predictor[1:n,'mean'])
+#
+#     for (i in 1:length(thresh)) {
+#
+#       z = ifelse(model_linear_predictor >= thresh[i], 1, 0)
+#       x = table(z,true_values)
+#
+#       tn = tryCatch(
+#         expr  = {x['0','0']},
+#         error = function(e){0}
+#       )
+#
+#       tp = tryCatch(
+#         expr  = {x['1','1']},
+#         error = function(e){0}
+#       )
+#
+#       fp = tryCatch(
+#         expr  = {x['1','0']},
+#         error = function(e){0}
+#       )
+#
+#       fn = tryCatch(
+#         expr  = {x['0','1']},
+#         error = function(e){0}
+#       )
+#
+#       prec = tp / (tp + fp)
+#       prec_se = sqrt((prec * (1 - prec))/ (n + 4))
+#       prec_lb = prec - 1.96 * prec_se
+#       prec_ub = prec + 1.96 * prec_se
+#
+#       recc = tp / (tp + fn)
+#
+#       tmp_dat <- data.frame(
+#         "Re"    = recc,
+#         "Pr"    = prec,
+#         "Pr_lb" = prec_lb,
+#         "Pr_ub" = prec_ub,
+#         "Group" = stringr::str_to_upper(dv)
+#       )
+#       plt_dat <- bind_rows(plt_dat, tmp_dat)
+#     }
+#   }
+#   # ----------------------------------- #
+#
+#
+#   # ----------------------------------- #
+#   # Tidy results
+#   # ----------------------------------- #
+#   tmp<-plt_dat %>%
+#     mutate(Pr_lb = case_when(is.nan(Pr_lb) & Pr == 1 ~ 1,
+#                              is.nan(Pr_lb) & Pr == 0 ~ 0,
+#                              TRUE ~ Pr_lb),
+#            Pr_ub = case_when(is.nan(Pr_ub) & Pr == 1 ~ 1,
+#                              is.nan(Pr_ub) & Pr == 0 ~ 0,
+#                              TRUE ~ Pr_ub))
+#   # ----------------------------------- #
+#
+#
+#   # ----------------------------------- #
+#   # Return statement
+#   # ----------------------------------- #
+#   return(plt_dat)
+#   # ----------------------------------- #
+# }
 
-
-  # ----------------------------------- #
-  # Estimate values
-  # ----------------------------------- #
-  for(g in c("icews", "ged")){
-    dv = sprintf("%s_bin", g)
-
-    model_linear_predictor <- pnorm(model_list[[dv]]$summary.linear.predictor[1:1116,'mean'])
-
-    for (i in 1:length(thresh)) {
-
-      z = ifelse(model_linear_predictor >= thresh[i], 1, 0)
-      x = table(z,true_values)
-
-      tn = tryCatch(
-        expr  = {x['0','0']},
-        error = function(e){0}
-      )
-
-      tp = tryCatch(
-        expr  = {x['1','1']},
-        error = function(e){0}
-      )
-
-      fp = tryCatch(
-        expr  = {x['1','0']},
-        error = function(e){0}
-      )
-
-      fn = tryCatch(
-        expr  = {x['0','1']},
-        error = function(e){0}
-      )
-
-      prec = tp / (tp + fp)
-      prec_se = sqrt((prec * (1 - prec))/ (n + 4))
-      prec_lb = prec - 1.96 * prec_se
-      prec_ub = prec + 1.96 * prec_se
-
-      recc = tp / (tp + fn)
-
-      tmp_dat <- data.frame(
-        "Re"    = recc,
-        "Pr"    = prec,
-        "Pr_lb" = prec_lb,
-        "Pr_ub" = prec_ub,
-        "Group" = stringr::str_to_upper(g)
-      )
-      plt_dat <- bind_rows(plt_dat, tmp_dat)
-    }
-  }
-  # ----------------------------------- #
-
-
-  # ----------------------------------- #
-  # Tidy results
-  # ----------------------------------- #
-  tmp<-plt_dat %>%
-    mutate(Pr_lb = case_when(is.nan(Pr_lb) & Pr == 1 ~ 1,
-                             is.nan(Pr_lb) & Pr == 0 ~ 0,
-                             TRUE ~ Pr_lb),
-           Pr_ub = case_when(is.nan(Pr_ub) & Pr == 1 ~ 1,
-                             is.nan(Pr_ub) & Pr == 0 ~ 0,
-                             TRUE ~ Pr_ub))
-  # ----------------------------------- #
-
-
-  # ----------------------------------- #
-  # Return statement
-  # ----------------------------------- #
-  return(plt_dat)
-  # ----------------------------------- #
-}
+# prc_plt <- function(data){
+#   plt <- ggplot(data = data) +
+#     geom_ribbon(aes(x = Re, ymin = Pr_lb, ymax = Pr_ub, fill = Group), alpha = .5) +
+#     geom_line(aes(x = Re, y = Pr, color = Group), size = 0.25) +
+#     labs(title = "SPDE Models, Precision-Recall Curves",
+#          x     = "Recall",
+#          y     = "Precision") +
+#     scale_color_manual("Group", values = c('black','black')) +
+#     scale_fill_manual(values = model_colors) +
+#     scale_y_continuous(labels = scales::percent_format()) +
+#     scale_x_continuous(labels = scales::percent_format()) +
+#     local_theme(tit.size, txt.size)
+#   return(plt)
+# }
 #-----------------------------------------------------------------------------#
 
 
@@ -401,6 +413,13 @@ roc_event_0507 <- local_roc_plot(roc_list = list("ICEWS" = rocs$`icews_bin.2005-
                                  title.size = tit.size,
                                  text.size  = txt.size,
                                  auc.size   = auc.size)
+
+roc_event_0809 <- local_roc_plot(roc_list = list("ICEWS" = rocs$`icews_bin.2008-2009`,
+                                                 "GED"   = rocs$`ged_bin.2008-2009`),
+                                 title      = "ROC - Event: 2008-2009",
+                                 title.size = tit.size,
+                                 text.size  = txt.size,
+                                 auc.size   = auc.size)
 # ----------------------------------- #
 
 
@@ -427,15 +446,22 @@ roc_under_0507 <- local_roc_plot(roc_list = list("ICEWS" = rocs$`icews_cinep_und
                                  title.size = tit.size,
                                  text.size  = txt.size,
                                  auc.size   = auc.size)
+
+roc_under_0809 <- local_roc_plot(roc_list = list("ICEWS" = rocs$`icews_cinep_under.2008-2009`,
+                                                 "GED"   = rocs$`ged_cinep_under.2008-2009`),
+                                 title      = "ROC - Under: 2008-2009",
+                                 title.size = tit.size,
+                                 text.size  = txt.size,
+                                 auc.size   = auc.size)
 # ----------------------------------- #
 
 
 # ----------------------------------- #
 # Create combined plot
 # ----------------------------------- #
-roc_event <- plot_grid(roc_event_0209, roc_event_0204, roc_event_0507,
+roc_event <- plot_grid(roc_event_0204, roc_event_0507, roc_event_0809,
                    ncol = 3)
-roc_under <- plot_grid(roc_under_0209, roc_under_0204, roc_under_0507,
+roc_under <- plot_grid(roc_under_0204, roc_under_0507, roc_under_0809,
                    ncol = 3)
 
 ggsave(filename = "Results/Plots/roc-event.png",
@@ -449,6 +475,20 @@ ggsave(filename = "Results/Plots/roc-under.png",
        width    = 9.0,
        height   = 4.5,
        dpi      = 350)
+
+# Stand-alone cross sections
+ggsave(filename = "Results/Plots/roc-0209-event.png",
+       plot     = roc_event_0209,
+       width    = 3.0,
+       height   = 4.5,
+       dpi      = 350)
+
+ggsave(filename = "Results/Plots/roc-0209-under.png",
+       plot     = roc_under_0209,
+       width    = 3.0,
+       height   = 4.5,
+       dpi      = 350)
+
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
@@ -459,22 +499,11 @@ ggsave(filename = "Results/Plots/roc-under.png",
 #-----------------------------------------------------------------------------#
 
 
-tst <- prc_dat(model_list  = inla_mods$`2002-2009`,
+tst <- prc_dat(model_list  = inla_mods$`2002-2009`[str_detect(names(inla_mods$`2002-2004`), c("(?=.*icews|ged)(?=.*bin)"))],
                true_values = dat$`2002-2009`$cinep_bin)
+tst %<>% mutate(Group = str_split(Group,"_") %>% map(1) %>% unlist)
 
-
-
-
-ggplot(data = tst) +
-  geom_ribbon(aes(x = Re, ymin = Pr_lb, ymax = Pr_ub, fill = Group), alpha = .5) +
-  geom_line(aes(x = Re, y = Pr, color = Group), size = 0.25) +
-  labs(title = "SPDE Models, Precision-Recall Curves",
-       x     = "Recall",
-       y     = "Precision") +
-  scale_color_manual("Group", values = c('black','black')) +
-  scale_y_continuous(labels = scales::percent_format()) +
-  scale_x_continuous(labels = scales::percent_format()) +
-  local_theme(title.size, text.size)
+prc_plt(data = tst)
 
 # ----------------------------------- #
 # Observed event models

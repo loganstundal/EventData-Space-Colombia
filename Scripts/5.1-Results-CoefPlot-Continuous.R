@@ -36,7 +36,7 @@ library(cowplot)
 #---------------------------#
 # Load data
 #---------------------------#
-load("Results/Tables/tidy-mods.Rdata");rm(tab_vals)
+load("Results/Tables/tidy-mods.Rdata")
 
 #---------------------------#
 # Local functions
@@ -56,7 +56,7 @@ custom_plot <- function(data){
          aes(y = y)) +
     geom_point(aes(x = x, color = model), size = 0.5) +
     geom_errorbar(aes(xmin = lb, xmax = ub, color = model), width = 0.1, size = 0.2) +
-    scale_color_manual(values = {{mod_cols}}) +
+    scale_color_manual(values = {{model_colors}}) +
     facet_wrap(~years, ncol = 3) +
     # geom_segment(aes(x = 0, y = 0.7, xend = 0, yend = 3.3),
     #              linetype = "dashed", color = "gray50", size = 0.4) +
@@ -110,15 +110,6 @@ g %<>% mutate(x = !!sym(cent))
 # ----------------------------------- #
 
 
-#-----------------------------------------------------------------------------#
-
-
-
-#-----------------------------------------------------------------------------#
-# Consistent color settings for comparisons
-#-----------------------------------------------------------------------------#
-mod_cols        <- c("#00bfc4", "#f8766d", "#7cae00")
-names(mod_cols) <- unique(g$model)
 #-----------------------------------------------------------------------------#
 
 
@@ -270,26 +261,4 @@ save(event_final_plot,
 
 rm(list = ls())
 #-----------------------------------------------------------------------------#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

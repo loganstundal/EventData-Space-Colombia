@@ -190,7 +190,7 @@ tab_vals <- tidy_vals %>%
   mutate(across(c(!!cent, lb, ub, lliks),
                 ~format(round(.x, 3), nsmall = 3))) %>%
   mutate(hpd = sprintf("[%s, %s]", lb, ub)) %>%
-  select(variable, !!cent, hpd, model, years) %>%
+  dplyr::select(variable, !!cent, hpd, model, years) %>%
   pivot_longer(.,
                cols     = c(!!cent, hpd),
                names_to = "type") %>%
@@ -207,7 +207,7 @@ lliks_n <- tidy_vals %>%
   ungroup() %>%
   mutate(across(c(lliks),
                 ~format(round(.x, 3), nsmall = 3))) %>%
-  select(lliks, n, model, years) %>%
+  dplyr::select(lliks, n, model, years) %>%
   pivot_longer(.,
                cols = c(lliks, n),
                names_to = "variable") %>%
@@ -236,7 +236,7 @@ rm(lliks_n)
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-save(tab_vals, tidy_vals, cent, file = "Results/Tables/tidy-mods.Rdata")
+save(tab_vals, cent, model_colors, file = "Results/Tables/tidy-mods.Rdata")
 rm(list = ls())
 #-----------------------------------------------------------------------------#
 

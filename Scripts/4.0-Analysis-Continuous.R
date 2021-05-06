@@ -2,7 +2,7 @@
 #
 # Author:        Logan Stundal
 # Date:          April 08, 2021
-# Purpose:       4.1: SPDE - Continuous models
+# Purpose:       4.0: SPDE - Continuous models
 #
 #
 # Copyright (c): Logan Stundal, 2021
@@ -167,8 +167,11 @@ formula <- y ~ -1 + intercept + dist + pop + tri + f(spatial.field, model=spde)
 
 # DVs
 dvs <- c(
-  'icews_bin', 'ged_bin', 'cinep_bin',
-  'icews_cinep_under','ged_cinep_under'
+  # Observed FARC Events
+  "icews_bin", "ged_bin", "cinep_bin",
+
+  # Under-reporting DVs
+  "icews_cinep_under","ged_cinep_under"
 )
 
 # INLA Stacks
@@ -188,12 +191,11 @@ stacks <- sapply(yr_grp, function(x){
   }, simplify = F)
 }, simplify = F)
 
-# For future help on this model, see:
+# For help on this model, see:
 # m <- inla.models()
 # m$latent$spde2$doc
 # m$latent$spde2$pdf
-
-inla.doc("matern2d")
+# inla.doc("matern2d")
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
@@ -203,6 +205,7 @@ inla.doc("matern2d")
 # INLA MODEL ESTIMATION                                                   ----
 #-----------------------------------------------------------------------------#
 inla_mods <- sapply(yr_grp, function(yr){
+  cat("\14")
   sapply(dvs, function(dv){
     cat(sprintf('Working on model %s-%s\n', yr, dv))
 
@@ -226,7 +229,9 @@ inla_mods <- sapply(yr_grp, function(yr){
 #-----------------------------------------------------------------------------#
 # COLOR VECTOR LIST FOR CONSISTENT PLOT COLORING                          ----
 #-----------------------------------------------------------------------------#
-model_colors <- viridis::viridis(n = 8)[c(1,3,5)]
+scales::show_col(viridis::viridis(n = 5)[c(1:3)])
+model_colors <- viridis::viridis(n = 5)[c(1:3)]
+names(model_colors) <- c("CINEP","ICEWS","GED")
 #-----------------------------------------------------------------------------#
 
 #-----------------------------------------------------------------------------#
