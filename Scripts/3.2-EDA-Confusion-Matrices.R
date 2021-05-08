@@ -31,6 +31,7 @@ rm(list = ls())
 # Load required packages
 #---------------------------#
 library(tidyverse)
+library(magrittr)
 library(sf)
 library(kableExtra)
 
@@ -43,6 +44,7 @@ load("data/data_variables.RData")
 # Functions
 #---------------------------#
 source("Scripts/Functions/kappa_cm.R")
+#-----------------------------------------------------------------------------#
 
 
 
@@ -94,7 +96,7 @@ confusion <- colombia_pn %>%
   select(Municipality, year, year_slice ,class, cinep, icews, ged) %>%
   mutate(across(c(cinep, icews, ged), ~case_when(.x > 0 ~ 1, TRUE ~ 0), .names = "{col}"))
 
-rm(list = c(ls(pattern = "colombia"), "active_farc"))
+rm(list = setdiff(ls(),c("confusion","colombia_cs","kappa_cm")))
 # ----------------------------------- #
 
 # Iteration variables
@@ -107,10 +109,58 @@ ys <- unique(confusion$year_slice)
 #-----------------------------------------------------------------------------#
 # CONFUSION MATRICES
 #-----------------------------------------------------------------------------#
+
+# 0.  Original cross-sectional table                     [1 table total]
+
 # 1.	One event per year over 8 years; adds to 40	       [2 tables total]
 # 2.	One event over 8 years; adds to 5		               [2 tables total]
 # 3.	One event per year in time slice; add to 15 or 10  [6 tables total]
 # 4.	One event over time slice years; adds to 5	       [6 tables total]
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# 0.	Original cross-section table  	                    1 table total]  ----
+#-----------------------------------------------------------------------------#
+
+colombia_cs %<>% select(cinep_bin, icews_bin, ged_bin) %>%
+  st_drop_geometry() %>%
+  mutate_all(as_factor)
+
+res <- sapply(c("icews_bin", "ged_bin"), function(x){
+  cfm <- caret::confusionMatrix(data = colombia_cs[[x]], reference = colombia_cs$cinep_bin, positive = "1")
+
+  tabs <- cfm$table
+  acc  <- round(cfm$overall[c("AccuracyLower","Accuracy","AccuracyUpper")] * 100, 1)
+
+  kap  <- round(kappa_cm(observed = colombia_cs$cinep_bin, p_bin = colombia_cs[[x]]),2)
+
+  return(list("table"    = t(tabs),
+              "accuracy" = acc,
+              "kappa"    = kap))
+}, simplify = FALSE)
+
+tab <- cbind(res$icews_bin$table, res$ged_bin$table)
+colnames(tab) <- rep(c("No Event", "Event"),2)
+rownames(tab) <- rep(c("No Event", "Event"),1)
+
+acc <- data.frame(rbind(res$icews_bin$accuracy,res$ged_bin$accuracy)) %>%
+  mutate(CI = sprintf("[%s, %s]", AccuracyLower, AccuracyUpper)) %>%
+  select(Accuracy, CI)
+rownames(acc) <- c("ICEWS","GED")
+
+kap <- data.frame(rbind(res$icews_bin$kappa,res$ged_bin$kappa)) %>%
+  mutate(CI = sprintf("[%s, %s]", Kappa_lci, Kappa_uci)) %>%
+  select(Kappa, CI)
+rownames(kap) <- c("ICEWS","GED")
+
+print(tab);cat(rep("\n",2))
+print(acc);cat(rep("\n",2))
+print(kap);cat(rep("\n",2))
+cat(rep("\n",6))
+
+rm(tab, acc, kap, res, colombia_cs)
 #-----------------------------------------------------------------------------#
 
 
