@@ -134,7 +134,7 @@ colombia0 <- colombia0 %>% st_crop(xmin = -80.00, xmax = -66.87,
 # ----------------------------------- #
 # Construct common data for all maps
 # ----------------------------------- #
-model_map_prep <- map_prep(mesh = mesh, boundary = colombia0, res = 150)
+model_map_prep <- map_prep(mesh = mesh, boundary = colombia0, res = 180)
 
 mods <- inla_mods$`2002-2009`[1:3]
 names(mods) <- c("ICEWS","GED","CINEP")
@@ -226,21 +226,22 @@ means <- ggplot(data = plt_dat) +
 
 
 # ----------------------------------- #
-# Posterior SD
+# Posterior Variance
 # ----------------------------------- #
-sds <- lapply(mods, function(x){
+vrs <- lapply(mods, function(x){
   post_surf(model    = x,
             map_prep = model_map_prep,
             type     = 'sd',
             probs    = FALSE)
 })
 
-sd_scale_vals = custom_scale(as.numeric(unlist(sapply(sds, '[','z'))), 8)
+plt_dat <- bind_rows(vrs, .id = "groups") %>%
+  mutate(groups = factor(groups, levels = c("ICEWS", "GED", "CINEP"))) %>%
+  mutate(z = z^2)
 
-plt_dat <- bind_rows(sds, .id = "groups") %>%
-  mutate(groups = factor(groups, levels = c("ICEWS", "GED", "CINEP")))
+vrs_scale_vals = custom_scale(surfaces = plt_dat$z, 8)
 
-sds <- ggplot(data = plt_dat) +
+vrs <- ggplot(data = plt_dat) +
   geom_raster(aes(x    = x,
                   y    = y,
                   fill = z),
@@ -251,9 +252,9 @@ sds <- ggplot(data = plt_dat) +
 
   scale_fill_gradientn(colours  = viridis::magma(n = 8),
                        na.value = 'transparent',
-                       breaks   = sd_scale_vals$breaks,
+                       breaks   = vrs_scale_vals$breaks,
                        # labels   = scales::percent,
-                       limits   = sd_scale_vals$limits,
+                       limits   = vrs_scale_vals$limits,
                        guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")) +
   geom_sf(data = st_as_sf(colombia0), fill = 'transparent', colour = 'black', size = 0.1) +
   theme_minimal() +
@@ -264,7 +265,7 @@ sds <- ggplot(data = plt_dat) +
         panel.background = element_rect(fill = NA, color = "black", size = 0.1),
         strip.background = element_rect(fill = "gray90", color = "black", size = 0.1)) +
   facet_wrap(facets = ~groups, ncol = 3) +
-  labs(title = expression(paste('Posterior standard deviation ', sigma[xi['s']])))
+  labs(title = expression(paste('Posterior variance ', sigma[xi['s']]^2)))
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
@@ -273,7 +274,7 @@ sds <- ggplot(data = plt_dat) +
 #-----------------------------------------------------------------------------#
 # FINAL PLOT                                                              ----
 #-----------------------------------------------------------------------------#
-final_plot <- plot_grid(probs, means, sds, nrow = 3, align = "v", axis = "l")
+final_plot <- plot_grid(probs, means, vrs, nrow = 3, align = "v", axis = "l")
 #-----------------------------------------------------------------------------#
 
 #-----------------------------------------------------------------------------#
@@ -293,8 +294,8 @@ ggsave(plot  = means,
        height= 3.0,
        units = 'in')
 
-ggsave(plot  = sds,
-       file  = 'Results/Plots/Map-spde-SDs.png',
+ggsave(plot  = vrs,
+       file  = 'Results/Plots/Map-spde-Vars.png',
        dpi   = 320,
        width = 6.5,
        height= 3.0,
@@ -307,11 +308,8 @@ ggsave(plot  = final_plot,
        height= 9.0,
        units = 'in')
 
-
-#save.image()
-#rm(list = ls())
+rm(list = ls())
 #-----------------------------------------------------------------------------#
 
 
 
-#-----------------------------------------------------------------------------#
