@@ -128,6 +128,57 @@ rm(tmp)
 #-----------------------------------------------------------------------------#
 
 # ----------------------------------- #
+# EVENT / NO-EVENT
+# ----------------------------------- #
+colombia0 <- read_rds(url('https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_COL_0_sf.rds'))
+
+colombia0 <- colombia0 %>% st_crop(xmin = -80.00, xmax = -66.87,
+                                   ymin = -04.22, ymax =  14.00)
+
+# colombia0 <- st_transform(colombia0, crs = st_crs(colombia_cs))
+plt_dat <- colombia_cs %>%
+  select(cinep_bin, icews_bin, ged_bin) %>%
+  mutate_at(.vars = vars(cinep_bin:ged_bin),.funs = ~case_when(.x == 1 ~ "Event", TRUE ~ "No Event")) %>%
+  pivot_longer(.,
+               cols      = cinep_bin:ged_bin,
+               names_to  = "var",
+               values_to = "val") %>%
+  mutate(var = str_to_upper(str_split(var, "_") %>% map(1))) %>%
+  mutate(var = factor(var, levels = c("ICEWS","GED","CINEP"))) %>%
+  st_set_geometry(., "geometry") %>%
+  st_transform(., crs = st_crs(colombia0))
+
+events <- ggplot(data = plt_dat) +
+  geom_sf(aes(fill = val), color = "gray60", size = 0.05) +
+  geom_sf(data = colombia0, fill = NA, color = "black", size = 0.1) +
+  geom_point(aes(x = -74.06456, y = 4.709534,
+                 color = "Bogota"), shape = 24, fill = "black",
+             size = 1) +
+  scale_color_manual(values = "white") +
+  scale_fill_manual(values = c("gray30", "gray70")) +
+  guides(color = guide_legend(override.aes = list(size = 2))) +
+  facet_wrap(~ var, ncol = 3) +
+  theme_minimal() +
+  theme(axis.text  = element_blank(),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        legend.title     = element_blank(),
+        legend.position  = "bottom",
+        legend.key.size  = unit(3, "mm"),
+        panel.background = element_rect(fill = NA, color = "black", size = 0.1),
+        strip.background = element_rect(fill = "gray90", color = "black", size = 0.1)) +
+  labs(title = "Reported FARC events by source")
+
+ggsave(plot  = events,
+       file  = 'Results/Plots/Map-Observed.png',
+       dpi   = 320,
+       width = 6.5,
+       height= 3.0,
+       units = 'in')
+# ----------------------------------- #
+
+
+# ----------------------------------- #
 # Yearly
 # ----------------------------------- #
 # ICEWS
