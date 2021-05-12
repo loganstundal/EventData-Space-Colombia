@@ -235,11 +235,10 @@ vrs <- lapply(mods, function(x){
             probs    = FALSE)
 })
 
-plt_dat <- bind_rows(vrs, .id = "groups") %>%
-  mutate(groups = factor(groups, levels = c("ICEWS", "GED", "CINEP"))) %>%
-  mutate(z = z^2)
+vrs_scale_vals = custom_scale(as.numeric(unlist(sapply(vrs, '[','z'))), 8)
 
-vrs_scale_vals = custom_scale(surfaces = plt_dat$z, 8)
+plt_dat <- bind_rows(vrs, .id = "groups") %>%
+  mutate(groups = factor(groups, levels = c("ICEWS", "GED", "CINEP")))
 
 vrs <- ggplot(data = plt_dat) +
   geom_raster(aes(x    = x,
@@ -309,6 +308,7 @@ ggsave(plot  = final_plot,
        units = 'in')
 
 rm(list = ls())
+dev.off()
 #-----------------------------------------------------------------------------#
 
 
