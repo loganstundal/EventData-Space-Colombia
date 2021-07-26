@@ -27,13 +27,18 @@ INLA are provided here:
 
 # Scripts
 
-## replication-models.R
-
-|         |                                                                                                                                                      |
-|---------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose | This script estimates all main models reported graphically in the main draft as well as in table format in the Appendix.                             |
-| Imports | data.Rdata                                                                                                                                           |
-| Exports | results-main.Rdata                                                                                                                                   |
-| Notes   | Due to the large file size of INLA models the data exported here contain only vectors necessary to reproduce tables or figures in subsequent scripts |
+| Script Name | **replication-models.R**                                                                                                                             |
+|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose     | This script estimates all main models reported graphically in the main draft as well as in table format in the Appendix.                             |
+| Imports     | data.Rdata                                                                                                                                           |
+| Exports     | results-main.Rdata                                                                                                                                   |
+| Notes       | Due to the large file size of INLA models the data exported here contain only vectors necessary to reproduce tables or figures in subsequent scripts |
 
 ## replication-tables.R
+
+|         |     |
+|---------|-----|
+| Purpose |     |
+| Imports |     |
+| Exports |     |
+| Notes   |     |
