@@ -8,6 +8,11 @@ output: github_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+<style>
+    table {
+        width: 100%;
+    }
+</style>
 
 _______________________________________________________________________________
 # README OVERVIEW
@@ -19,6 +24,7 @@ _______________________________________________________________________________
 | Purpose | This document explains the order-of-operations in which to execute scripts that replicate all analysis in the paper / appendix as well as produce all figures and tables. Additionally, data imports and data exports are noted for each script. All imported and exported data files are stored in the **Replication/Data/** directory. |
 
 These replication files are also located on the [Harvard Dataverse](here.com).
+
 _______________________________________________________________________________
 
 # Software
@@ -53,6 +59,7 @@ The *Replication/Data/data.Rdata* file contains all data necessary to replicate 
 | terrain_ri_mean_m     | Terrain roughness indicator, municipality average (meters)              |
 | centroid_mun_lat      | Municipality centroid, latitude                                         |
 | centroid_mun_long     | Municipality centroid, longitude                                        |
+
 _______________________________________________________________________________
 
 

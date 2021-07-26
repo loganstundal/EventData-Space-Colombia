@@ -2,6 +2,12 @@ Read Me: Replication Directory Overview
 ================
 26 July, 2021
 
+<style>
+    table {
+        width: 100%;
+    }
+</style>
+
 ------------------------------------------------------------------------
 
 # README OVERVIEW
@@ -14,7 +20,8 @@ Read Me: Replication Directory Overview
 
 These replication files are also located on the [Harvard
 Dataverse](here.com).
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+------------------------------------------------------------------------
 
 # Software
 
