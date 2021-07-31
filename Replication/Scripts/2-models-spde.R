@@ -2,7 +2,7 @@
 #
 # Author:        Logan Stundal
 # Date:          July 26, 2021
-# Purpose:       Replication materials - manuscript main tables
+# Purpose:       Replicates main SPDE models.
 #
 #
 # Copyright (c): Logan Stundal, 2021
@@ -29,33 +29,38 @@ rm(list = ls())
 #---------------------------#
 # Load required packages
 #---------------------------#
-library(tidyverse)
-library(magrittr)
-library(sf)
+library(dplyr)
+library(tibble)
 library(INLA)
-library(kableExtra)
+
+# To install inla version used in analysis:
+# install.packages("https://inla.r-inla-download.org/R/stable/src/contrib/INLA_21.02.23.tar.gz",
+#                  repos  = NULL,
+#                  method = "libcurl")
 #---------------------------#
 
-#---------------------------#
-# Set working directory
-#---------------------------#
-# setwd()
-#---------------------------#
 
 #---------------------------#
 # Load data
 #---------------------------#
-load("replication/data.Rdata")
+load("Data/farc_events.Rdata")
 #---------------------------#
 
 #---------------------------#
 # Functions
 #---------------------------#
 qoi <- function(model_list, centrality = "mean"){
-  # Takes an inla model list and returns a list containing quantities
-  # of interest
-  # To extract quantites of interest for one model, enter as a named list, e.g.;
+  # ----------------------------------- #
+  # function description
+  # ----------------------------------- #
+  # qoi() [quantity of interest] takes an INLA model list and returns a list
+  # containing quantities of interest: posterior parameter estimates as well as
+  # credibility intervals on included regressors and parameters for the GMRF
+  # (range, kappa, and sigma).
+  # To extract these quantities for one model, input your model as a named list:
   # result <- qoi(model_list = list("my_model" = estimated_model))
+  # ----------------------------------- #
+
 
   # ----------------------------------- #
   # Extract partials from structural model
@@ -153,6 +158,88 @@ qoi <- function(model_list, centrality = "mean"){
               "lliks" = inla_lliks))
   # ----------------------------------- #
 }
+
+
+matern <- function(lambda, kappa, dist){
+  # Matern covariance function, used with matern_data()
+  2^(1-lambda)/gamma(lambda) * (kappa*dist)^lambda* besselK(x=dist*kappa, nu=lambda)
+}
+
+
+matern_data <- function(model,
+                        max_distance = NULL){
+  # ----------------------------------- #
+  # function description
+  # ----------------------------------- #
+  # matern_data takes an inla model where random effects estimated in a gaussian field are assumed
+  # to follow a continuous decay process fit with a stochastic partial differential equation with a
+  # matern covariance solution. This function extract model parameters to construct decay estimates
+  # up to a max_distance argument (km) set by the user.
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Extract spatial field and parameters from model input
+  # ----------------------------------- #
+  # Spatial parameters with nominal scale (time is aggregated if present)
+  spde.resfinal <- inla.spde2.result(inla = model,
+                                     name = "spatial.field",
+                                     spde,do.transform = TRUE) # do.transform put in correct scale
+
+  # Kappa / computed using Blangiardo & Cameletti (2015)
+  Kappa    <-inla.emarginal(function(x) x, spde.resfinal$marginals.kappa[[1]]) # kappa (mean)
+  Kappahpd <-inla.hpdmarginal(0.95, spde.resfinal$marginals.kappa[[1]])        # kappa (hpd 95%)
+
+  # Variance of the random field
+  variance    <- inla.emarginal(function(x) x, spde.resfinal$marginals.variance.nominal[[1]]) # variance (mean)
+  variancehpd <- inla.hpdmarginal(0.95, spde.resfinal$marginals.variance.nominal[[1]])        # variance (hpd 95%)
+
+  # Range + degree conversion
+  range    <- inla.emarginal(function(x) x, spde.resfinal$marginals.range.nominal[[1]]) # range (mean)
+  rangehpd <- inla.hpdmarginal(0.95, spde.resfinal$marginals.range.nominal[[1]])        # range (hpd 95%)
+  deg      <- 2*pi*6371/360
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Build plot data frame
+  # ----------------------------------- #
+  # Additional parameters:
+  lambda <- 1
+
+  if(is.null(max_distance)){
+    dist.x <- seq(from = 0.01, to = rangehpd[,"high"], length.out = 100)
+  } else{
+    # Convert user-input kilometers "max_distance" to decimal degrees for
+    # appropriate mapping to estimation space.
+    max_distance <- max_distance / deg
+
+    dist.x <- seq(from = 0.01, to = max_distance, length.out = 100)
+  }
+
+  plt_dat <- data.frame(
+    "x"  = dist.x,
+    "lb" = matern(lambda = lambda,
+                  kappa  = Kappahpd[,"low"],
+                  dist   = dist.x),
+    "y"  = matern(lambda = lambda,
+                  kappa  = Kappa,
+                  dist   = dist.x),
+    "ub" = matern(lambda = lambda,
+                  kappa  = Kappahpd[,"high"],
+                  dist   = dist.x))
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Return statement
+  # ----------------------------------- #
+  res <- list("df"    = plt_dat,
+              "range" = range)
+
+  return(res)
+  # ----------------------------------- #
+}
 #---------------------------#
 #-----------------------------------------------------------------------------#
 
@@ -175,10 +262,16 @@ nv       <- mesh$n
 A        <- inla.spde.make.A(mesh = mesh,
                              loc  = as.matrix(cbind(tmp$centroid_mun_long,
                                                     tmp$centroid_mun_lat)))
-mesh_list <- list("mesh" = mesh,
-                  "nv"   = mesh$n,
-                  "A"    = A)
-rm(mesh, nv, A, border, colcoord, tmp)
+
+# Construct a mesh projector object to use with projecting field estimates:
+mesh_projector <- inla.mesh.projector(mesh, projection = "longlat",
+                                      dims = c(180,180))
+
+mesh_list <- list("mesh"      = mesh,
+                  "nv"        = mesh$n,
+                  "A"         = A,
+                  "projector" = mesh_projector)
+rm(mesh, nv, A, border, colcoord, tmp, mesh_projector)
 # ----------------------------------- #
 
 
@@ -204,7 +297,7 @@ dvs <- c(
   "icews_cinep_under","ged_cinep_under"
 )
 
-# INLA Stacks (INLA model take data in a stack format)
+# INLA Stacks (INLA models take data in a stack format)
 stacks <- sapply(yr_grp, function(x){
 
   tmp <- dat[[x]]
@@ -298,37 +391,77 @@ inla_mods <- sapply(yr_grp, function(yr){
 
 
 #-----------------------------------------------------------------------------#
-# Extract quantities of interest for tables and figures
+# Extract quantities of interest for tables and figures 3 and 4
 #-----------------------------------------------------------------------------#
 # ----------------------------------- #
 # Extract quantities of interest
 # ----------------------------------- #
-results_vals <- sapply(yr_grp, function(x){
+parameter_data <- sapply(yr_grp, function(x){
   qoi(inla_mods[[x]], centrality = "median")
 }, simplify = F)
-# ----------------------------------- #
 
-
-# ----------------------------------- #
-# Save results for table formatting script
-# ----------------------------------- #
-# save(results_vals, file = "results-tables.Rdata")
+# Replicates estimates used to produce main article Figures 3 and 4 and
+# associated tables A.5-A.8 located in Appendix
+# e.g.,
+# Appendix table A.5:
+# parameter_data$`2002-2009`
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
 
 #-----------------------------------------------------------------------------#
-# Extract model quantities to map posterior Gaussian fields
+# Extract model quantities to map posterior Gaussian fields and range
 #-----------------------------------------------------------------------------#
+# ----------------------------------- #
+# Gaussian Random Field Estimates
+# ----------------------------------- #
+# The following collects data to construct posterior field maps in
+# replication-a8.R corresponding to Appendix Figure A8
 
-# These estimates are used to construct posterior field maps and spatial
-# decay plots in Appendix figures A.8 and A.9 respectively.
+# Note - The appendix provides maps for full cross-section (2002-2009) results
+# only. Change `2002-2009` on first line for other years
+# nb : [1-3] corresponds to observed FARC event, not underreporting models
+field_data <- sapply(inla_mods$`2002-2009`[1:3], function(mod){
+  sapply(c("mean", "sd"), function(x){
+    inla.mesh.project(projector = mesh_list$projector,
+                      field     = mod$summary.random$spatial.field[[x]])
+  }, simplify = FALSE)
+}, simplify = FALSE)
+
+names(field_data) <- c("ICEWS","GED","CINEP")
+# ----------------------------------- #
+
 
 # ----------------------------------- #
-# Save
+# Spatial Error Range Estimates
 # ----------------------------------- #
-save(results_fields, file = "results-fields.Rdata")
+# The following collects data to construct posterior range estimates
+# replication-a9.R corresponding to Appendix Figure A9
+
+# Note - The appendix provides spatial error correlation decay estimates for
+# full cross-section (2002-2009) results only. Change `2002-2009` on first
+# line for other years
+# nb : [1-3] corresponds to observed FARC event, not underreporting models
+range_data <- sapply(inla_mods$`2002-2009`[1:3], function(mod){
+  matern_data(model = mod, max_distance = 500)
+  # max distance 500km
+}, simplify = FALSE)
+
+names(range_data) <- c("ICEWS","GED","CINEP")
+# ----------------------------------- #
+
+
+# ----------------------------------- #
+# Predicted outctomes - for ROCs
+# ----------------------------------- #
+# Extract fit predicted values for observed FARC and Underreporting
+# ICEWS and GED models
+pred_data <- sapply(inla_mods, function(yr){
+  sapply(yr[c(1,2,4,5)], function(mod){
+    pnorm(mod$summary.linear.predictor[1:1116, "mean"])
+  }, simplify = FALSE)
+}, simplify = FALSE)
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
@@ -336,8 +469,8 @@ save(results_fields, file = "results-fields.Rdata")
 #-----------------------------------------------------------------------------#
 # COLOR VECTOR LIST FOR CONSISTENT PLOT COLORING                          ----
 #-----------------------------------------------------------------------------#
-scales::show_col(viridis::viridis(n = 5)[c(1:3)])
-model_colors <- viridis::viridis(n = 5)[c(1:3)]
+# scales::show_col(c("#7CAE00","#F8766D","#00BFC4"))
+model_colors        <- c("#7CAE00", "#F8766D", "#00BFC4")
 names(model_colors) <- c("CINEP","ICEWS","GED")
 #-----------------------------------------------------------------------------#
 
@@ -346,9 +479,43 @@ names(model_colors) <- c("CINEP","ICEWS","GED")
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-        # save(inla_mods, dat, spde, dvs, yr_grp, model_colors,
-        #      file = "Replication/inla-mods.RData")
-        # rm(list=ls())
+
+# Clean up
+# rm(dat, stacks, dvs, formula, yr_grp, matern, matern_data, qoi)
+
+# ----------------------------------- #
+# Save
+# ----------------------------------- #
+# Parameter data for:
+#   - table formatting script - replication-tables.R and
+#   - figures (3 & 4) script  - replication-figures.R
+save(parameter_data, yr_grp, dvs, model_colors,
+     file = "Results/Replication-Estimates/parameter-data.Rdata")
+# rm(parameter_data)
+
+# Field data for:
+#   - Gaussian field mapping script - replication-a8.R
+save(field_data, mesh_list, model_colors,
+     file = "Results/Replication-Estimates/field-data.Rdata")
+# rm(field_data)
+
+# Range data for:
+#   - SPDE error correlation range - replication-a9.R
+save(range_data, model_colors,
+     file = "Results/Replication-Estimates/range-data.Rdata")
+# rm(range_data)
+
+# Predicted outcome data for:
+#   - ROCs - replication-all-fig_ROC.R
+save(pred_data, model_colors,
+     file = "Results/Replication-Estimates/pred-data.Rdata")
+
+# Published models [folder further compressed after save]
+save(inla_mods, spde, mesh_list, stacks, dat, qoi,
+     compress = "xz",
+     file     = "Results/Published-Models/published-models-spde.Rdata")
+# ----------------------------------- #
+rm(list=ls())
 #-----------------------------------------------------------------------------#
 
 

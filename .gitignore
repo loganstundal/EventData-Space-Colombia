@@ -7,3 +7,4 @@
 /Data/
 Replication/INLA_21.02.23.tar.gz
 /Results/*.Rdata
+*.tar.gz
