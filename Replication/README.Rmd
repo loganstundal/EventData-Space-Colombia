@@ -73,9 +73,9 @@ _______________________________________________________________________________
 
 The R-scripts stored in the `Scripts/` directory generate outputs to produce all figures or tables presented in the main article or appendix. These exports are sored in one of three sub-directories in the `Results/` folder:
 
-  - **`Replication-Estimates/`** ~  contains Rdata files with model estimates used to reproduce all tables and figures
-  - **`Replication-Figures/`** ~ contains png files for all figure exports
-  - **`Published-Models/`** ~ contain compressed Rdata files with pre-estimated models from executing code in `2-models-spde.R` or `3-models-spem.R` 
+  - **`Replication-Estimates/`** ~  contains `.Rdata` files with model estimates used to reproduce all tables and figures
+  - **`Replication-Figures/`** ~ contains `.png` files of all figure exports
+  - **`Published-Models/`** ~ contains compressed `.Rdata` files with pre-estimated models from executing code in `2-models-spde.R` or `3-models-spem.R` 
   
 R-INLA models with random fields have large file sizes (~130Mb * 5 models * 4 time cuts = ~2.5Gb). To reduce file sizes, after estimating models in the primary `2-models-spde.R` script,  quantities of interest necessary for figures or tables are extracted or computed and exported as vectors rather than complete model objects. The compressed full model results are stored as an Rdata object in `Published-Models/`
 

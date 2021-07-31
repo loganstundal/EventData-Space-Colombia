@@ -38,7 +38,7 @@ library(kableExtra)
 #---------------------------#
 # Load data
 #---------------------------#
-load("../Results/Replication-Estimates/parameter-data.Rdata")
+load("Results/Replication-Estimates/parameter-data.Rdata")
 #---------------------------#
 
 #---------------------------#
@@ -149,12 +149,14 @@ rm(lliks_n)
 # pane. In an rmarkdown file being compiled to pdf, custom_table() will
 # default to a LateX formatted output.
 
+# Footnote text for all tables:
+fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
+
 # ----------------------------------- #
 # 2002-2009
 # ----------------------------------- #
-fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
 tmp <- tab_vals %>%
-  dplyr::filter(years == cap) %>%
+  dplyr::filter(years == "2002-2009") %>%
   dplyr::select(-years)
 custom_table(data = tmp, cap = "2002-2009", footnote = fn)
 # ----------------------------------- #
@@ -163,9 +165,8 @@ custom_table(data = tmp, cap = "2002-2009", footnote = fn)
 # ----------------------------------- #
 # 2002-2004
 # ----------------------------------- #
-fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
 tmp <- tab_vals %>%
-  dplyr::filter(years == cap) %>%
+  dplyr::filter(years == "2002-2004") %>%
   dplyr::select(-years)
 custom_table(data = tmp, cap = "2002-2004", footnote = fn)
 # ----------------------------------- #
@@ -174,9 +175,8 @@ custom_table(data = tmp, cap = "2002-2004", footnote = fn)
 # ----------------------------------- #
 # 2005-2007
 # ----------------------------------- #
-fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
 tmp <- tab_vals %>%
-  dplyr::filter(years == cap) %>%
+  dplyr::filter(years == "2005-2007") %>%
   dplyr::select(-years)
 custom_table(data = tmp, cap = "2005-2007", footnote = fn)
 # ----------------------------------- #
@@ -185,10 +185,11 @@ custom_table(data = tmp, cap = "2005-2007", footnote = fn)
 # ----------------------------------- #
 # 2008-2009
 # ----------------------------------- #
-fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
 tmp <- tab_vals %>%
-  dplyr::filter(years == cap) %>%
+  dplyr::filter(years == "2008-2009") %>%
   dplyr::select(-years)
 custom_table(data = tmp, cap = "2008-2009", footnote = fn)
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
+
+rm(list=ls())

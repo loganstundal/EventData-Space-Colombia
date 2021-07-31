@@ -394,7 +394,7 @@ figureA9 <- ggplot(data = range_df, aes(x=x)) +
   scale_x_continuous(name   = "Distance [km]",
                      limits = c(0,max(breaks)),
                      breaks = breaks,
-                     labels = function(x){x * deg},
+                     labels = function(x){x * (2*pi*6371/360)},
                      expand = c(0,0)) +
 
   scale_y_continuous(name   = "Matern covariance function",

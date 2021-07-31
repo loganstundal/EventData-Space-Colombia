@@ -31,10 +31,15 @@ rm(list = ls())
 # Load required packages
 #---------------------------#
 library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(purrr)
 library(forcats)
 library(sf)
 library(ProbitSpatial)
 library(sandwich)
+library(spdep)
 #---------------------------#
 
 #---------------------------#
@@ -87,66 +92,22 @@ local_table <- function(coefs   = NULL,
 }
 
 
-se_robust <- function(object,
-                      robust = FALSE,
-                      hc     = NULL){
+spem_ses <- function(object){
   # ----------------------------------- #
   # Description
   # ----------------------------------- #
-  # Returns heteroskedasticity corrected standard errors for SpatialProbit
-  # or glm class objects. Ideally to be used with tidy_model()
+  # Computes standard errors for SpatialProbit class models and returns as
+  # a vector
   # ----------------------------------- #
-  if(robust == TRUE & is.null(hc)){
-    stop('Provide a value for correction type to "hc" argument: "HC0", "HC1", "HC2", or "HC3"')
-  }
+  mycoef    <- object@coeff
+  mod_covar <- ifelse(object@varcov == "varcov", "UC", "UP")
 
-  if(any(class(object) == "SpatialProbit")){
-    # stop('Function only takes models of class: "SpatialProbit".')
-    mycoef    <- object@coeff
-    mod_covar <- ifelse(object@varcov == "varcov", "UC", "UP")
-
-    # Estimate variance covariance matrix
-    lik     <- function (th, env){.Call(paste('lik',object@DGP,mod_covar, sep='_'),
-                                        th, env, PACKAGE = "ProbitSpatial")}
-    H        <- numDeriv::hessian(lik, x = mycoef, env = object@env)
-    se_vcov  <- abs(solve(H))
-    res      <- as.numeric(object@y - object@X %*% object@beta)
-    X        <- object@X
-    nobs     <- nrow(X)
-    nvar     <- ncol(X)
-    se_bread <- (se_vcov / as.numeric(sum(res^2) / (nobs - nvar)))[1:nvar,1:nvar]
-    se_hii   <- diag(X %*% se_bread %*% t(X))
-    se_rho   <- sqrt(se_vcov[nvar + 1,nvar + 1])
-  } else if(any(class(object) == "glm")){
-    se_vcov  <- vcov(object)
-    res      <- resid(object)
-    X        <- model.matrix(object)
-    nobs     <- nrow(X)
-    nvar     <- ncol(X)
-    se_bread <- (se_vcov / as.numeric(sum(res^2) / (nobs - nvar)))[1:nvar,1:nvar]
-    se_hii   <- diag(X %*% se_bread %*% t(X))
-  }
-
-  # Correct Standard Errors
-  if(robust == TRUE & hc == "HC0"){
-    hc <- se_bread %*% t(X) %*% diag(res^2) %*% X %*% se_bread
-  } else if(robust == TRUE & hc == "HC1"){
-    hc <- as.numeric(nobs / (nobs - nvar)) *
-      (se_bread %*% t(X) %*% diag(res^2) %*% X %*% se_bread)
-  } else if(robust == TRUE & hc == "HC2"){
-    hc <- se_bread %*% t(X) %*% diag( (res^2 / (1 - se_hii)) ) %*% X %*% se_bread
-  } else if(robust == TRUE & hc == "HC3"){
-    hc <- se_bread %*% t(X) %*% diag( (res^2) / (1 - se_hii)^2 ) %*% X %*% se_bread
-  } else {
-    hc <- se_vcov
-  }
-
-  # Collect standard errors
-  if(any(class(object) == "SpatialProbit")){
-    se <- c(sqrt(diag(hc)), se_rho)
-  } else{
-    se <- sqrt(diag(hc))
-  }
+  # Estimate variance covariance matrix
+  lik     <- function (th, env){.Call(paste('lik',object@DGP,mod_covar, sep='_'),
+                                      th, env, PACKAGE = "ProbitSpatial")}
+  H          <- numDeriv::hessian(lik, x = mycoef, env = object@env)
+  spem_vcov  <- abs(solve(H))
+  se         <- sqrt(diag(spem_vcov))
   return(se)
 }
 
@@ -160,14 +121,15 @@ tidy_model <- function(model){
   # ----------------------------------- #
   if(any(class(model) == "SpatialProbit")){
     model_coefs <- model@coeff
-    model_ses   <- se_robust(object = model, robust = TRUE, hc = "HC1")
+    model_ses   <- spem_ses(model)
     model_llik  <- model@loglik
     model_lb    <- model_coefs - 1.96 * model_ses
     model_ub    <- model_coefs + 1.96 * model_ses
     preds       <- pnorm(as.vector(model@X %*% model@beta))
   } else{
     model_coefs <- coef(model)
-    model_ses   <- se_robust(object = model, robust = TRUE, hc = "HC1")
+    model_ses   <- vcovHC(x = model, type = "HC1") %>%
+      diag %>% sqrt %>% as.vector
     model_llik  <- as.numeric(logLik(model))
     model_lb    <- model_coefs - 1.96 * model_ses
     model_ub    <- model_coefs + 1.96 * model_ses
@@ -180,10 +142,21 @@ tidy_model <- function(model){
     "ses"   = model_ses,
     "lliks" = model_llik,
     "lb"    = model_lb,
-    "ub"    = model_ub
+    "ub"    = model_ub,
+    "preds" = preds
   )
   return(model_results)
 }
+
+spem_cut <- function(x){
+  # Translates spem predicted probabilities into categories for mapping
+  cut(x,
+      breaks         = c(0, 0.05, 0.1, 0.2, 0.4, 0.6, Inf),
+      include.lowest = TRUE,
+      dig.lab        = 2) %>%
+    fct_recode(., "(0.6 +)" = "(0.6,Inf]")
+}
+
 #---------------------------#
 #-----------------------------------------------------------------------------#
 
@@ -216,8 +189,8 @@ colombia2    <- as.data.frame(colombia2) %>%
 rownames(colombia2) <- colombia2$id
 
 # QUEEN - Spatial neighbors, matrix and lists:
-w <- spdep::poly2nb(pl = colombia2, queen = TRUE) %>%
-  spdep::nb2mat(., style = "W")
+w <- poly2nb(pl = colombia2, queen = TRUE) %>%
+  nb2mat(., style = "W")
 colnames(w) <- rownames(w)
 # ----------------------------------- #
 
@@ -293,54 +266,34 @@ probit_sp <- sapply(dvs, function(dv){
 #-----------------------------------------------------------------------------#
 
 
-#-----------------------------------------------------------------------------#
-# TIDY DATA                                                               ----
-#-----------------------------------------------------------------------------#
-se_events_probs <- sapply(spem, function(x){
-  pnorm(predict(x, X = x@X))
-}, simplify = FALSE)
-names(se_events_probs) <- paste(names(se_events_probs), 'SEM.prob',sep = '.')
-se_events_probs <- as.data.frame(se_events_probs)
-
-
-colombia %<>%
-  bind_cols(., se_events_probs) %>%
-  left_join(., colombia_cs[, c("geometry", "ID_Mun")], by = "ID_Mun")
-
-rm(colombia_cs)
-
-# ----------------------------------- #
-# COLOR VECTOR LIST FOR CONSISTENT PLOT COLORING
-# ----------------------------------- #
-model_colors <- viridis::viridis(n = 5)[c(1:3)]
-names(model_colors) <- c("CINEP","ICEWS","GED")
-#-----------------------------------------------------------------------------#
-
 
 #-----------------------------------------------------------------------------#
 # Figure A4 - SPEM: Predicted Probability Map                             ----
 #-----------------------------------------------------------------------------#
 # ----------------------------------- #
-# Map setup
+# Tidy Data
 # ----------------------------------- #
-# Colors and custom cut function
-spem_cols <- viridis::magma(n = 12)[seq(2,12,2)]
+spem_probs <- sapply(probit_sp[1:3] %>% map("model"), function(x){
+  pnorm(predict(x, X = x@X))
+}, simplify = FALSE)
+names(spem_probs) <- paste(names(spem_probs), 'SEM.prob',sep = '.')
 
-spem_cut <- function(x){
-  cut(x,
-      breaks         = c(0, 0.05, 0.1, 0.2, 0.4, 0.6, Inf),
-      include.lowest = TRUE,
-      dig.lab        = 2) %>%
-    fct_recode(., "(0.6 +)" = "(0.6,Inf]")
-}
+# Turn spem_probs into a data frame and join department and municipality
+# variables (all `dat` year-grouping are in same order, so 2002-2009 is the
+# same as the rest). Will use these variables to join to spatial data
+spem_probs        <- as.data.frame(spem_probs) %>%
+  bind_cols(., dat$`2002-2009`[,c("department", "municipality")]) %>%
+  rename("ICEWS" = 1, "GED" = 2, "CINEP" = 3)
 
-mp <- colombia2 %>%
-  mutate(icews = spem_cut(probit_sp$icews_bin$preds),
-         ged   = spem_cut(probit_sp$ged_bin$preds),
-         cinep = spem_cut(probit_sp$cinep_bin$preds)) %>%
-  dplyr::select(icews,ged,cinep,geometry) %>%
+
+# Join predicted probabilities to spatial data and expand longer for
+# facet plot
+map_data <- colombia2 %>%
+  left_join(., spem_probs, by = c("department", "municipality")) %>%
+  mutate(across(.cols = ICEWS:CINEP,
+                .fns  = ~(spem_cut(.x)))) %>%
   pivot_longer(.,
-               cols = icews:cinep,
+               cols = ICEWS:CINEP,
                values_to = "val",
                names_to  = "group") %>%
   mutate(group = str_to_upper(group)) %>%
@@ -351,11 +304,11 @@ mp <- colombia2 %>%
 # ----------------------------------- #
 # Produce map
 # ----------------------------------- #
-figureA4 <- ggplot(data = mp, aes(fill = val)) +
+figureA4 <- ggplot(data = map_data, aes(fill = val)) +
   geom_sf(color = "gray50", size = 0) +
   facet_wrap(~group, ncol = 3) +
   scale_fill_manual(name   = "",
-                    values = spem_cols) +
+                    values = viridis::magma(n = 12)[seq(2,12,2)]) +
   theme_minimal() +
   theme(legend.position  = "bottom",
         legend.direction = "horizontal",
@@ -390,14 +343,7 @@ ggsave(filename = "Results/Replication-Figures/figure_appendix_4.png",
 #-----------------------------------------------------------------------------#
 # Save non-spatial AND spatial probits
 save(probit_sp, probit_ns, w,
-     file = "../Results/Published-Models/published-models-spem.Rdata")
+     file = "Results/Published-Models/published-models-spem.Rdata")
 #-----------------------------------------------------------------------------#
 
 rm(list=ls())
-
-# for(dv in names(probit_sp)){
-#   pred <- pnorm(predict(probit_sp[[dv]]$model, X = probit_sp[[dv]]$model@X))
-#
-#   probit_sp[[dv]]$preds <- pred
-#
-# }

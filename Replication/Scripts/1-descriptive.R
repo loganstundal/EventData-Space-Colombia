@@ -30,6 +30,9 @@ rm(list = ls())
 # Load required packages
 #---------------------------#
 library(dplyr)
+library(tidyr)
+library(forcats)
+library(stringr)
 library(ggplot2)
 library(ggrepel)
 library(sf)
@@ -40,9 +43,9 @@ library(kableExtra)
 #---------------------------#
 # Load data
 #---------------------------#
-load("../Data/farc_events.Rdata")
-load("../Data/colombia.Rdata")
-load("../Data/colombia2.Rdata")
+load("Data/farc_events.Rdata")
+load("Data/colombia.Rdata")
+load("Data/colombia2.Rdata")
 #---------------------------#
 
 #---------------------------#
@@ -123,6 +126,7 @@ confusion_matrix <- function(data, x, reference = "cinep"){
 # Custom map theme
 map_theme <- theme(axis.text  = element_blank(),
                    axis.title = element_blank(),
+                   axis.ticks = element_blank(),
                    panel.grid = element_blank(),
                    legend.title     = element_blank(),
                    legend.position  = "bottom",
@@ -182,7 +186,7 @@ events <- ggplot(data = plt_dat) +
 # Export Figure 1 map
 # ----------------------------------- #
 ggsave(plot  = events,
-       file  = '../Results/Replication-Figures/figure_main_1.png',
+       file  = 'Results/Replication-Figures/figure_main_1.png',
        dpi   = 320,
        width = 6.5,
        height= 3.0,
@@ -239,13 +243,14 @@ active_farc <- dat$`2002-2009` %>%
 
 
 # ----------------------------------- #
-# Appendix Table 1
+# Appendix Table 1 & Export
 # ----------------------------------- #
-active_farc %>%
+tableA1 <- active_farc %>%
   select(c(department:capdist,x)) %>%
   kbl(format = "pipe", digits = 2,
       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
                     "Pop. Density","Capital Dist.", "Class"))
+tableA1
 # ----------------------------------- #
 
 
@@ -297,7 +302,7 @@ mp <- ggplot(data = active_farc_sf) +
 # ----------------------------------- #
 # Export Figure 2 map
 # ----------------------------------- #
-ggsave(filename = "../Results/Replication-Figures/figure_main_2.png",
+ggsave(filename = "Results/Replication-Figures/figure_main_2.png",
        plot     = mp,
        units    = "in",
        width    = 4.0,
@@ -306,7 +311,7 @@ ggsave(filename = "../Results/Replication-Figures/figure_main_2.png",
 # ----------------------------------- #
 
 # Clean up
-rm(active_farc_sf, bogota, colombia2, map_theme, mp)
+rm(active_farc_sf, bogota, colombia2, map_theme, mp, tableA1)
 #-----------------------------------------------------------------------------#
 
 

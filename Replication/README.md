@@ -86,11 +86,11 @@ produce all figures or tables presented in the main article or appendix.
 These exports are sored in one of three sub-directories in the
 `Results/` folder:
 
--   **`Replication-Estimates/`** \~ contains Rdata files with model
+-   **`Replication-Estimates/`** \~ contains `.Rdata` files with model
     estimates used to reproduce all tables and figures
--   **`Replication-Figures/`** \~ contains png files for all figure
+-   **`Replication-Figures/`** \~ contains `.png` files of all figure
     exports
--   **`Published-Models/`** \~ contain compressed Rdata files with
+-   **`Published-Models/`** \~ contains compressed `.Rdata` files with
     pre-estimated models from executing code in `2-models-spde.R` or
     `3-models-spem.R`
 

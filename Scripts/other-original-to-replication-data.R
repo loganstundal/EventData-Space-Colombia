@@ -1,5 +1,6 @@
 
 rm(list= ls())
+setwd("C:/Users/logan/GoogleDrive/UMN/RESEARCH/PAPERS/EventData-Space-Colombia")
 load("data/data_variables.RData")
 rm(colombia_yg)
 
@@ -11,8 +12,9 @@ colombia <- colombia_pn %>%
   group_by(Department, Municipality, yr_grp) %>%
   summarize(across(c(cinep, icews, ged), sum),
             across(c(distance_bogota_km_ln, terrain_ri_mean_m,
-                     pop_sum, pop_sum_ln, area_km2, area_km2_ln, distance_bogota_km,
+                     area_km2, area_km2_ln, distance_bogota_km,
                      centroid_mun_long, centroid_mun_lat), ~.x[1]),
+            pop_sum    = mean(pop_sum),
             pop_sum_ln = mean(pop_sum_ln),
             .groups = "keep") %>%
   ungroup() %>%
@@ -81,11 +83,12 @@ dat$Yearly_panel <- colombia_pn %>%
   select(department, municipality, year, cinep, cinep_bin, icews, icews_bin,
          icews_cinep_under, ged, ged_bin, ged_cinep_under, area_km2,
          area_km2_ln, distance_bogota_km_ln, distance_bogota_km, pop_sum,
-         pop_sum_ln, terrain_ri_mean_m, centroid_mun_long, centroid_mun_lat)
+         pop_sum_ln, terrain_ri_mean_m, centroid_mun_long, centroid_mun_lat) %>%
+  st_drop_geometry()
 
 rm(colombia_pn)
 # ----------------------------------- #
 
 
 yr_grp <- names(dat[1:4])
-save(dat, file = "../Data/farc_events.Rdata")
+save(dat, file = "Replication/Data/farc_events.Rdata")

@@ -267,6 +267,7 @@ A        <- inla.spde.make.A(mesh = mesh,
 mesh_projector <- inla.mesh.projector(mesh, projection = "longlat",
                                       dims = c(180,180))
 
+# Collect mesh elements in a list
 mesh_list <- list("mesh"      = mesh,
                   "nv"        = mesh$n,
                   "A"         = A,
@@ -479,43 +480,34 @@ names(model_colors) <- c("CINEP","ICEWS","GED")
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-
-# Clean up
-# rm(dat, stacks, dvs, formula, yr_grp, matern, matern_data, qoi)
-
-# ----------------------------------- #
-# Save
-# ----------------------------------- #
-# Parameter data for:
-#   - table formatting script - replication-tables.R and
-#   - figures (3 & 4) script  - replication-figures.R
+# INLA-SPDE model parameter data for:
+#   - table formatting script - `6-tables.R` and
+#   - figures (3 & 4) script  - `4-figures-coefplots.R`
 save(parameter_data, yr_grp, dvs, model_colors,
      file = "Results/Replication-Estimates/parameter-data.Rdata")
-# rm(parameter_data)
 
 # Field data for:
-#   - Gaussian field mapping script - replication-a8.R
+#   - Gaussian field mapping script - `7-figures-field_range-estimates.R`
 save(field_data, mesh_list, model_colors,
      file = "Results/Replication-Estimates/field-data.Rdata")
-# rm(field_data)
 
 # Range data for:
-#   - SPDE error correlation range - replication-a9.R
+#   - SPDE error correlation range - `7-figures-field_range-estimates.R`
 save(range_data, model_colors,
      file = "Results/Replication-Estimates/range-data.Rdata")
-# rm(range_data)
 
 # Predicted outcome data for:
-#   - ROCs - replication-all-fig_ROC.R
+#   - ROCs - `5-figures-ROCs.R`
 save(pred_data, model_colors,
      file = "Results/Replication-Estimates/pred-data.Rdata")
+
+
 
 # Published models [folder further compressed after save]
 save(inla_mods, spde, mesh_list, stacks, dat, qoi,
      compress = "xz",
      file     = "Results/Published-Models/published-models-spde.Rdata")
-# ----------------------------------- #
-rm(list=ls())
 #-----------------------------------------------------------------------------#
 
+rm(list=ls())
 

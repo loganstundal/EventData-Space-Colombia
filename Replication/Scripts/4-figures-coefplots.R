@@ -40,7 +40,7 @@ library(cowplot)
 #---------------------------#
 # Load data
 #---------------------------#
-load("../Results/Replication-Estimates/parameter-data.Rdata")
+load("Results/Replication-Estimates/parameter-data.Rdata")
 #---------------------------#
 
 #---------------------------#
@@ -246,14 +246,14 @@ under_final_plot <- plot_grid(under_main,
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-ggsave(filename = "../Results/Replication-Figures/figure_main_3.png",
+ggsave(filename = "Results/Replication-Figures/figure_main_3.png",
        plot     = event_final_plot,
        width    = 6.5,
        height   = 6.5,
        units    = "in",
        dpi      = 380)
 
-ggsave(filename = "../Results/Replication-Figures/figure_main_4.png",
+ggsave(filename = "Results/Replication-Figures/figure_main_4.png",
        plot     = under_final_plot,
        width    = 6.5,
        height   = 6.5,
