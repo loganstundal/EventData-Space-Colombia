@@ -1,25 +1,82 @@
 ---
 title: "Read Me: Replication Directory Overview"
 date:  '`r format(Sys.time(), "%d %B, %Y")`'
-output: github_document
+output:
+  rmarkdown::github_document:
+  bookdown::pdf_document2:
+    toc: no
+    latex_engine: pdflatex
+    number_sections: no
+fontsize: 12pt
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+local_table <- function(data, c1_width = "4.5cm", c2_width = NULL, ...){
+    if(knitr::is_latex_output()){
+      data <- data.frame(lapply(data, function(x){gsub("`",   "", x)}),
+                         stringsAsFactors = F)
+      data <- data.frame(lapply(data, function(x){gsub("_",   "\\\\_", x)}),
+                         stringsAsFactors = F)
+      data <- data.frame(lapply(data, function(x){gsub("&",   "\\\\&", x)}),
+                         stringsAsFactors = F)
+      data <- data.frame(lapply(data, function(x){gsub("%",   "\\\\%", x)}),
+                         stringsAsFactors = F)
+      data <- data.frame(lapply(data, function(x){gsub("<br>", "\n", x)}), 
+                         stringsAsFactors = F)  
+      data <- data %>% mutate_all(linebreak)
+      
+      # Future note - for whatever reason, kable_styling() causes latex to 
+      # freak out when passed a data frame containing cells with breaks
+      
+      if(is.null(c2_width)){
+        data %>% kbl(format = "latex", booktabs = TRUE, escape = FALSE, ...) %>% 
+          kable_styling(full_width = TRUE) %>% 
+          column_spec(., column = 1, width = c1_width) %>% 
+          row_spec(., row = 0, bold = TRUE) %>% 
+          print
+      } else{
+        data %>% kbl(format = "latex", booktabs = TRUE, escape = FALSE, ...) %>% 
+          column_spec(., column = 1, width = c1_width) %>% 
+          column_spec(., column = 2, width = c2_width) %>% 
+          row_spec(., row = 0, bold = TRUE) %>% 
+          print
+      }
+    } else{
+      data %>% 
+        kbl(format = "simple", ...) %>% 
+        print
+  }
+}
 ```
 
-_______________________________________________________________________________
 # README OVERVIEW
 
-|         |               |
-| ------- | ------------- |
-| Author  | Logan Stundal |
-| Date    | July 26, 2021 |  
-| Paper   | Human Rights Violations in Space: Assessing the External Validity of Machine Geo-coded Vs. Human Geo-coded Data  |
-| Co-Authors | Bagozzi, Benjamin; Freeman, John; Holmes, Jennifer |
-| Purpose | This document explains script execution order to replicate all results in the paper / appendix as well as produce all figures and tables. Data imports and data exports are noted for each script.<br /><br /><span>&#8226;</span> Estimation results are exported to `Results/Replication-Estimates`<br /><span>&#8226;</span> Figures are exported to `Results/Replication-Figures`<br /><span>&#8226;</span> Published models were compressed and exported to `Results/Published-Models` |
+```{r, results = "asis"}
+dat <- bind_rows(
+  c(a = "Author", b = "Logan Stundal, stund005@umn.edu"),
+  c(a = "Date", b = "July 26, 2021"),
+  c(a = "Paper", b = "Human Rights Violations in Space: Assessing the External Validity of Machine Geo-coded Vs. Human Geo-coded Data"),
+  c(a = "Co-Authors", b = "Bagozzi, Benjamin; Freeman, John; Holmes, Jennifer"),
+  c(a = "Purpose", b = "This document explains script execution order to replicate all results in the paper / appendix as well as produce all figures and tables. Data imports and data exports are noted for each script.")
+) %>% 
+  local_table(data = ., c1_width = "2.5cm", col.names = NULL)
+```
 
-These replication files are provided at:  
+## Directory structure
+
+* `Data/` - contains original data used as inputs for all models
+* `Scripts/` - contains all scripts to reproduce published results
+* `Results/` - contains folders to store replication script outputs
+    * `Replication-Estimates/` - stores exported estimated quantites
+    * `Replication-Figures/` - stores exported figures
+    * `Published-Models` - stores published models as compressed `.Rdata` files
+
+## Replication files are located at:  
   - [GitHub repository](https://github.com/loganstundal/EventData-Space-Colombia/tree/main/Replication)  
   - [Harvard Dataverse]()
 
@@ -32,6 +89,7 @@ The primary analysis in this paper was conducted using R-INLA version 21.02.23 c
   - https://inla.r-inla-download.org/R/stable/src/contrib/INLA_21.02.23.tar.gz
 
 These models were estimated with `r R.version.string` running on Windows 10 x64 (build 19043). 
+
 _______________________________________________________________________________
 
 # Data
@@ -40,29 +98,31 @@ All data for this project are stored in the `Data/` subdirectory which contains 
 
 * **`/farc_events.Rdata`** contains all data necessary to replicate the analysis. This file contains an r-object called `dat` which is a named list comprising of 4 data frames: `2002-2004`, `2005-2007`, `2008-2009`, and `2002-2009` each corresponding to a temporal aggregation of the data implied by the name. These data frames each contain the following variables:
 
-| Variable Name         | Description                                                             |
-| :-------------------- | :---------------------------------------------------------------------- |
-| department            | Colombia Administrative level-1, Department name                        |
-| municipality          | Colombia Administrative level-2, Municipality name                      |
-| yr_grp                | Years for cross-section                                                 | 
-| cinep                 | FARC activity, count (CINEP source)                                     | 
-| cinep_bin             | FARC activity, binary-indicator (CINEP source)                          |
-| icews                 | FARC activity, count (ICEWS source)                                     |
-| icews_bin             | FARC activity, binary-indicator (ICEWS source)                          |
-| icews_cinep_under     | FARC activity, ICEWS underreporting relative to CINEP, binary-indicator |
-| ged                   | FARC activity, count (GED source)                                       |
-| ged_bin               | FARC activity, binary-indicator (GED source)                            |
-| ged_cinep_under       | FARC activity, GED underreporting relative to CINEP, binary-indicator   |
-| area_km2              | Municipality area                                                       |
-| area_km2_ln           | Municipality area, logged                                               |
-| distance_bogota_km_ln | Distance (km) between municipality centroid and Bogota, logged          |
-| distance_bogota_km    | Distance (km) between municipality centroid and Bogota                  |
-| pop_sum               | Population count at municipality level                                  |
-| pop_sum_ln            | Population count at municipality level, logged                          |
-| terrain_ri_mean_m     | Terrain roughness indicator, municipality average (meters)              |
-| centroid_mun_lat      | Municipality centroid, latitude                                         |
-| centroid_mun_long     | Municipality centroid, longitude                                        |
-
+```{r, results = "asis"}
+dat <- bind_rows(
+  c(a = "department",   b = "Colombia Admin. level-1, Department name"),
+  c(a = "municipality", b = "Colombia Admin. level-2, Municipality name"),
+  c(a = "yr_grp",       b = "Year periodization"),
+  c(a = "cinep",        b = "FARC activity, count (CINEP source)"),
+  c(a = "cinep_bin",    b = "FARC activity, binary-indicator (CINEP source)"),
+  c(a = "icews",        b = "FARC activity, count (ICEWS source)"),
+  c(a = "icews_bin",    b = "FARC activity, binary-indicator (ICEWS source)"),
+  c(a = "icews_cinep_under", b = "FARC activity, ICEWS underreporting relative to CINEP, binary-indicator"),
+  c(a = "ged",          b = "FARC activity, count (GED source)"),
+  c(a = "ged_bin",      b = "FARC activity, binary-indicator (GED source)"),
+  c(a = "ged_cinep_under", b = "FARC activity, GED underreporting relative to CINEP, binary-indicator"),
+  c(a = "area_km2", b = "Municipality area"),
+  c(a = "area_km2_ln", b = "Municipality area, logged"),
+  c(a = "distance_bogota_km_ln", b = "Distance (km) between municipality centroid and Bogota, logged"),
+  c(a = "distance_bogota_km", b = "Distance (km) between municipality centroid and Bogota"),
+  c(a = "pop_sum", b = "Population count at municipality level"),
+  c(a = "pop_sum_ln", b = "Population count at municipality level, logged"),
+  c(a = "terrain_ri_mean_m", b = "Terrain roughness indicator, municipality average (meters)"),
+  c(a = "centroid_mun_lat", b = "Municipality centroid, latitude"),
+  c(a = "centroid_mun_long", b = "Municipality centroid, longitude"),
+) %>% 
+  local_table(data = ., col.names = c("Variable name", "Description"))
+```
 
 * **`colombia.Rdata`** - an unprojected simple feature of Colombia's international border used to provide a sharply contrasting boundary in maps containing posterior mean, probability, and standard deviation estimates of the Gaussian random field. 
 * **`colombia2.Rdata`** - an unprojected simple feature object of level-2 administrative boundaries (Municipalities) used for mapping purposes.
@@ -85,54 +145,145 @@ R-INLA models with random fields have large file sizes (~130Mb * 5 models * 4 ti
 
 The following tables provide an overview of each script in the `Scripts/` directory. Each table indicates what data sources are imported - either raw data from `Data/` or estimated quantities from `Replication-Estimates/`. Each table also indicates what component of the paper the script exports (either a table or figure) as well as where that element is stored within the Replication directory.
 
-| Script Name  | **1-descriptive.R** |
-| :----------- | :----------- |
-| Purpose      | Reproduces the descriptive data overview and comparison presented in paper Section 3.2 including Figures 1 & 2 and Tables 1 & 2. This script also produces Appendix Table 1.|
-| Imports      | `Data/farc_events.Rdata`<br />`Data/colombia.Rdata`<br />`Data/colombia2.Rdata` |
-| Exports      | `Replication-Figures/figure_main_1.png` - Figure 1<br />`Replication-Figures/figure_main_2.png` - Figure 2<br /> |
+```{r, results = 'asis'}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = "This top-level script contains code to install all packages used in scripts 1-7 as well as code to automate execution of scripts 1-7."),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "0-master.R"))
+```
+
+
+```{r, results = 'asis'}
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Reproduces the descriptive data overview and comparison presented in main paper Section 3.2 including Figures 1 & 2 and Tables 1 & 2. This script also produces Appendix Table 1."),
+  c(a = "Imports",      b = "`Data/farc_events.Rdata`<br>`Data/colombia.Rdata`<br>`Data/colombia2.Rdata`"),
+  c(a = "Exports",      b = "`Replication-Figures/figure_main_1.png` - Figure 1<br>`Replication-Figures/figure_main_2.png` - Figure 2"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "1-descriptive.R"))
+```
 
 
 
-| Script Name  | **2-models-spde.R** |
-| :----------- | :----------- |
-| Purpose      | Reproduces INLA models with SPDEs reported graphically in the main draft as well as in table format in the Appendix. |
-| Imports      | `Data/farc_events.Rdata` |
-| Exports      | `Replication-Estimates/parameter-data.Rdata` - All model parameter and HPD estimates<br />`Replication-Estimates/field-data.Rdata` - Projected estimates of Gaussian field mean and SD<br />`Replication-Estimates/range-data.Rdata` - Spatial field decay and range estimates<br />`Replication-Estimates/pred-data.Rdata` - Model predicted outcomes on probability scale<br />`Published-Models/published-models-spde.Rdata` - Compressed INLA model estimates presented in the published article|
+```{r, results = 'asis'}
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Reproduces INLA models with SPDEs reported graphically in the main draft as well as in table format in the Appendix."),
+  c(a = "Imports",      b = "`Data/farc_events.Rdata`"),
+  c(a = "Exports",      b = "`Replication-Estimates/parameter-data.Rdata` - All model parameter and HPD estimates<br>`Replication-Estimates/field-data.Rdata` - Projected estimates of Gaussian field mean and SD<br>`Replication-Estimates/range-data.Rdata` - Spatial field decay and range estimates<br>`Replication-Estimates/pred-data.Rdata` - Model predicted outcomes on probability scale<br>`Published-Models/published-models-spde.Rdata` - Compressed INLA model estimates presented in the published article"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "2-models-spde.R"))
+```
 
 
-| Script Name  | **3-models-spem.R** |
-| :----------- | :----------- |
-| Purpose      | Reproduces discrete spatial probit error models (spem) presented in Appendix Tables A3 and A4 as well as Figure A3 (spem ROC comparison) and Figure A4 (spem predicted probabilities). This script and associated export also provides estimates for non-spatial probits presented in the Appendix.|
-| Imports      | `Data/farc_events.Rdata` |
-| Exports      | `Published-Models/published-models-spem.Rdata`<br />`Replication-Figures/figure_appendix_4.png` |
+```{r, results = 'asis'}
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Reproduces discrete spatial probit error models (spem) presented in Appendix Tables A3 and A4 as well as Figure A3 (spem ROC comparison) and Figure A4 (spem predicted probabilities). This script and associated export also provides estimates for non-spatial probits presented in the Appendix."),
+  c(a = "Imports",      b = "`Data/farc_events.Rdata`"),
+  c(a = "Exports",      b = "`Published-Models/published-models-spem.Rdata`<br>`Replication-Figures/figure_appendix_4.png`"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "3-models-spem.R"))
+```
 
 
-| Script Name  | **4-figures_coefplots.R** |
-| :----------- | :----------- |
-| Purpose      | Reproduces Figures 3 and 4 from the main paper which present INLA model parameter estimates and credibility intervals for included regressors as well as GRMF parameters. |
-| Imports      | `Replication-Estimates/parameter-data.Rdata` |
-| Exports      | `Replication-Figures/figure_main_3.png` <br />`Replication-Figures/figure_main_4.png` |
+```{r, results = 'asis'}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Reproduces Figures 3 and 4 from the main paper which present INLA model parameter estimates and credibility intervals for included regressors as well as GRMF parameters."),
+  c(a = "Imports",      b = "`Replication-Estimates/parameter-data.Rdata`"),
+  c(a = "Exports",      b = "`Replication-Figures/figure_main_3.png` <br>`Replication-Figures/figure_main_4.png`"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "4-figures\\_coefplots.R"))
+```
 
 
-| Script Name  | **5-figures-ROCs.R** |
-| :----------- | :----------- |
-| Purpose      | Produces figure 5 which presents ROCs and AUC estimates comparing ICEWS and GED model performance against CINEP ground truth observations. |
-| Imports      | `Data/farc_events.Rdata`<br />`Replication-Estimates/pred-data.Rdata`<br />`Published-Models/published-models-spem.Rdata` |
-| Exports      | `Replication-Figures/figure_main_5.png`<br />`Replication-Figures/figure_appendix_3.png`<br />`Replication-Figures/figure_appendix_5.png`<br />`Replication-Figures/figure_appendix_6.png`<br />`Replication-Figures/figure_appendix_7.png`|
+```{r, results = 'asis'}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Produces figure 5 which presents ROCs and AUC estimates comparing ICEWS and GED model performance against CINEP ground truth observations."),
+  c(a = "Imports",      b = "`Data/farc_events.Rdata`<br>`Replication-Estimates/pred-data.Rdata`<br>`Published-Models/published-models-spem.Rdata`"),
+  c(a = "Exports",      b = "`Replication-Figures/figure_main_5.png`<br>`Replication-Figures/figure_appendix_3.png`<br>`Replication-Figures/figure_appendix_5.png`<br>`Replication-Figures/figure_appendix_6.png`<br>`Replication-Figures/figure_appendix_7.png`"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "5-figures-ROCs.R"))
+```
 
 
-| Script Name  | **6-tables.R** |
-| :----------- | :----------- |
-| Purpose      | Produces Appendix tables A5-A8 which present INLA GRMF model estimates in table format with median and 95% HPD estimates. |
-| Imports      | `parameter-data.Rdata`<br /> |
-| Exports      | No export. Note: the `custom_table()` function in this script will return LaTex code when evaluated in an RMarkdown document compiled to pdf. |
+```{r, results = 'asis'}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Produces Appendix Tables A5-A8 which present INLA GRMF model estimates in table format with median and 95% HPD estimates."),
+  c(a = "Imports",      b = "`parameter-data.Rdata`<br>"),
+  c(a = "Exports",      b = "No export. Note: the `custom_table()` function in this script will return LaTex code when evaluated in an RMarkdown document compiled to pdf."),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "6-tables.R"))
+```
 
 
-| Script Name  | **7-figures-field_range-estimates.R** |
-| :----------- | :----------- |
-| Purpose      | Produces figures related to posterior Gaussian Markov Random Field. Figure 8 - posterior field maps and Figure 9 - Posterior spatial error range and decay.|
-| Imports      | `Replication-Estimates/field-data.Rdata`<br />`Replication-Estimates/range-data.Rdata`<br />`Data/colombia.Rdata`|
-| Exports      | `Replication-Figures/figure_appendix_8.png` - Figure 8<br />`Replication-Figures/figure_appendix_9.png` - Figure 9 |
+```{r, results = 'asis'}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = "Produces figures related to posterior Gaussian Markov Random Field. Figure 8 - posterior field maps and Figure 9 - Posterior spatial error range and decay."),
+  c(a = "Imports",      b = "`Replication-Estimates/field-data.Rdata`<br>`Replication-Estimates/range-data.Rdata`<br>`Data/colombia.Rdata`"),
+  c(a = "Exports",      b = "`Replication-Figures/figure_appendix_8.png` - Figure 8<br>`Replication-Figures/figure_appendix_9.png` - Figure 9"),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "7-figures-field\\_range-estimates.R"))
+```
+
 
 <!-- rmarkdown::render("README.rmd", "pdf_document")
 rmarkdown::render("README.rmd", "html_document") -->
+
+
+```{r, results = 'asis', eval =  FALSE}
+# Template for script tables
+dat <- bind_rows(
+  c(a = "Purpose",      b = ""),
+  c(a = "Imports",      b = ""),
+  c(a = "Exports",      b = ""),
+  c(a = "Dependencies", b = ""),
+  c(a = "Runtime",      b = "")
+) %>% 
+  local_table(data = ., 
+              c1_width  = "1.1in", 
+              c2_width  = "5.1in",
+              col.names = c("Script Name", "THE SCRIPT.R"))
+```
+
