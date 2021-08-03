@@ -146,7 +146,7 @@ local_roc_plot <- function(roc_list,
     geom_abline(intercept = 0, slope = 1, linetype = 'dashed',
                 colour = 'gray80') +
     scale_color_manual("Model", values = rep('black',n)) +
-    # scale_fill_manual(values = {{model_colors}}) +
+    scale_fill_manual(values = {{model_colors}}) +
     scale_y_continuous("True Positive Rate",
                        labels = scales::percent_format(),
                        expand = c(0.005,0.005)) +
