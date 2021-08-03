@@ -3,11 +3,11 @@ title: "Read Me: Replication Directory Overview"
 subtitle: "Human Rights Violations in Space: Assessing the External Validity of Machine Geo-coded Vs. Human Geo-Coded Data"
 date:  '`r format(Sys.time(), "%d %B, %Y")`'
 output:
-  rmarkdown::github_document:
   bookdown::pdf_document2:
     toc: no
     latex_engine: pdflatex
     number_sections: no
+  rmarkdown::github_document:
 fontsize: 12pt
 ---
 
@@ -83,11 +83,14 @@ dat <- bind_rows(
   local_table(data = ., c1_width = "2.5cm", col.names = NULL)
 ```
 
+  
+```{r, results='asis'}
+lnbrk()
+```
 
 ## Directory structure
 
 * `Data/` - contains original data used as inputs for all models
-    * `FARC-separate/` - contains separate Rdata files corresponding to period or annual data 
 * `Scripts/` - contains all scripts to reproduce published results
 * `Results/` - contains folders to store replication script outputs
     * `Replication-Estimates/` - stores exported estimated quantities
@@ -129,7 +132,7 @@ dat <- data.frame(
 
 All data for this project are stored in the `Data/` subdirectory which contains three files:
 
-* **`/farc_events.Rdata`** contains all data necessary to replicate the analysis. This file contains an r-object called `dat` which is a named list comprising of 4 data frames: `2002-2004`, `2005-2007`, `2008-2009`, and `2002-2009` each corresponding to a temporal aggregation of the data implied by the name. `FARC-separate/` contains these data frames as separate `Rdata` files. These data frames all contain the following variables:
+* **`/farc_events.Rdata`** contains all data necessary to replicate the analysis. This file contains an r-object called `dat` which is a named list comprising of 4 data frames: `2002-2004`, `2005-2007`, `2008-2009`, and `2002-2009` each corresponding to a temporal aggregation of the data implied by the name. These data frames all contain the following variables:
 
 ```{r, results = "asis"}
 dat <- bind_rows(
