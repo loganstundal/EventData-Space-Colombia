@@ -345,13 +345,13 @@ figureA5 <- local_roc_plot(roc_list = list("ICEWS" = roc_spem$icews_cinep_under,
 # ----------------------------------- #
 # Create combined plots
 # ----------------------------------- #
-figure5 <- plot_grid(roc_event_0204, roc_event_0507, roc_event_0809,
+figure5 <- plot_grid(roc_event_0209, roc_event_0204, roc_event_0507,
                      ncol = 3)
 
-figureA6 <- plot_grid(roc_under_0204, roc_under_0507, roc_under_0809,
+figureA6 <- plot_grid(roc_under_0209, roc_under_0204, roc_under_0507,
                       ncol = 3)
 
-figureA7 <- plot_grid(roc_event_0209, roc_under_0209,
+figureA7 <- plot_grid(roc_event_0809, roc_under_0809,
                       ncol = 2)
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#

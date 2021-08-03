@@ -15,7 +15,7 @@
 #
 #-----------------------------------------------------------------------------#
 
-
+#!/usr/bin/env Rscript
 
 #-----------------------------------------------------------------------------#
 # ADMINISTRATIVE                                                          ----
@@ -90,7 +90,7 @@ kappa_cm <- function(observed,
                     'Kappa_uci' = k_uci))
 }
 
-confusion_matrix <- function(data, x, reference = "cinep"){
+confusion_matrix <- function(data, x, reference = "cinep", title = NULL){
   # This function prints a formatted confusion matrix with accuracy and
   # Cohen's Kappa statistics
   cfm <- caret::confusionMatrix(data = data[[x]], reference = data[[reference]],
@@ -116,10 +116,16 @@ confusion_matrix <- function(data, x, reference = "cinep"){
     tibble::column_to_rownames(var = "z")
 
   {
-    cat(sprintf("\t%s\t\n",str_to_upper(x)))
+    cat(paste(rep("_",40), collapse = ""));cat("\n")
+    if(!is.null(title)){
+      cat(sprintf("\t%s\t\n", str_to_upper(title)))
+    } else{
+      cat(sprintf("\t%s\t\n",str_to_upper(x)))
+      }
     print(tabs);cat("\n")
-    cat("---------------------------");cat("\n")
-    print(acc_kap);cat("\n\n\n")
+    cat(paste(rep("-",30), collapse = ""));cat("\n")
+    print(acc_kap);cat("\n")
+    cat(paste(rep("_",40), collapse = ""));cat("\n\n\n")
     }
 }
 
@@ -251,6 +257,8 @@ tableA1 <- active_farc %>%
       col.names = c("Department","Municipality","CINEP","ICEWS","GED",
                     "Pop. Density","Capital Dist.", "Class"))
 tableA1
+
+save_kable(x = tableA1, file = "Results/Replication-Tables/table_appendix_1.txt")
 # ----------------------------------- #
 
 
@@ -367,19 +375,23 @@ rm(list = setdiff(ls(),c("confusion","kappa_cm","confusion_matrix","full_cs")))
 #-----------------------------------------------------------------------------#
 
 
+sink(file = "Results/Replication-Tables/table_main_1.txt")
 #-----------------------------------------------------------------------------#
 # 1.	TABLE 1: Municipality-Event Confusion Matrix, 2002-2009
 #-----------------------------------------------------------------------------#
 confusion_matrix(data = full_cs ,
-                 x    = "icews")
+                 x    = "icews",
+                 title = "Table 1 (2002-2009); ICEWS")
 
 confusion_matrix(data = full_cs,
-                 x    = "ged")
+                 x    = "ged",
+                 title = "Table 1 (2002-2009); GED")
 
-rm(full_cs)
 #-----------------------------------------------------------------------------#
+sink()
 
 
+sink(file = "Results/Replication-Tables/table_main_2.txt")
 #-----------------------------------------------------------------------------#
 # TABLE 2 ~ Municipality-Event Confusion Matrices for Selected Municipalities
 #-----------------------------------------------------------------------------#
@@ -388,28 +400,34 @@ rm(full_cs)
 # ----------------------------------- #
 confusion_matrix(data = confusion %>%
                    filter(class  == "Non-remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Non-remote, ICEWS, 2002-2009")
 confusion_matrix(data = confusion %>%
                    filter(class  == "Non-remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Non-remote, GED, 2002-2009")
 
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2002-2004",
                           class  == "Non-remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Non-remote, ICEWS, 2002-2004")
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2002-2004",
                           class  == "Non-remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Non-remote, GED, 2002-2004")
 
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2005-2007",
                           class  == "Non-remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Non-remote, ICEWS, 2005-2007")
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2005-2007",
                           class  == "Non-remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Non-remote, GED, 2005-2007")
 # ----------------------------------- #
 
 
@@ -418,29 +436,35 @@ confusion_matrix(data = confusion %>%
 # ----------------------------------- #
 confusion_matrix(data = confusion %>%
                    filter(class  == "Remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Remote, ICEWS, 2002-2009")
 confusion_matrix(data = confusion %>%
                    filter(class  == "Remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Remote, GED, 2002-2009")
 
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2002-2004",
                           class  == "Remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Remote, ICEWS, 2002-2004")
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2002-2004",
                           class      == "Remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Remote, GED, 2002-2004")
 
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2005-2007",
                           class      == "Remote"),
-                 x = "icews")
+                 x = "icews",
+                 title = "Remote, ICEWS, 2005-2007")
 confusion_matrix(data = confusion %>%
                    filter(year_slice == "2005-2007",
                           class      == "Remote"),
-                 x = "ged")
+                 x = "ged",
+                 title = "Remote, GED, 2005-2007")
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
-
+sink()
 rm(list=ls())

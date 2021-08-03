@@ -1,6 +1,6 @@
 Read Me: Replication Directory Overview
 ================
-01 August, 2021
+02 August, 2021
 
 # README OVERVIEW
 
@@ -17,8 +17,9 @@ Read Me: Replication Directory Overview
 -   `Data/` - contains original data used as inputs for all models
 -   `Scripts/` - contains all scripts to reproduce published results
 -   `Results/` - contains folders to store replication script outputs
-    -   `Replication-Estimates/` - stores exported estimated quantites
+    -   `Replication-Estimates/` - stores exported estimated quantities
     -   `Replication-Figures/` - stores exported figures
+    -   `Replication-Tables/` - stores exported tables
     -   `Published-Models` - stores published models as compressed
         `.Rdata` files
 
@@ -27,8 +28,6 @@ Read Me: Replication Directory Overview
 -   [GitHub
     repository](https://github.com/loganstundal/EventData-Space-Colombia/tree/main/Replication)  
 -   [Harvard Dataverse]()
-
-------------------------------------------------------------------------
 
 # Software
 
@@ -40,9 +39,31 @@ version of INLA is provided here:
 -   <https://inla.r-inla-download.org/R/stable/src/contrib/INLA_21.02.23.tar.gz>
 
 These models were estimated with R version 4.0.4 (2021-02-15) running on
-Windows 10 x64 (build 19043).
+Windows 10 x64 (build 19043) with an Intel Core i5-6200U CPU (2.30GHz)
+and 8Gb of DDR3 memory (1867 MHz).
 
-------------------------------------------------------------------------
+In addition, the following packages are called in scripts 1-7. Code to
+install these packages is located in `Scripts/0-master.R`.
+
+| Package       | Version  |
+|:--------------|:---------|
+| cowplot       | 1.1.1    |
+| dplyr         | 1.0.7    |
+| forcats       | 0.5.1    |
+| ggplot2       | 3.3.3    |
+| ggrepel       | 0.9.1    |
+| kableExtra    | 1.3.4    |
+| ProbitSpatial | 1.0      |
+| pROC          | 1.17.0.1 |
+| purrr         | 0.3.4    |
+| raster        | 3.4.5    |
+| sandwich      | 3.0.0    |
+| scales        | 1.1.1    |
+| sf            | 0.9.7    |
+| spdep         | 1.1.5    |
+| stringr       | 1.4.0    |
+| tibble        | 3.0.6    |
+| tidyr         | 1.1.3    |
 
 # Data
 
@@ -87,20 +108,20 @@ contains three files:
     level-2 administrative boundaries (Municipalities) used for mapping
     purposes.
 
-------------------------------------------------------------------------
-
-# Results
+# Replication results
 
 The R-scripts stored in the `Scripts/` directory generate outputs to
 produce all figures or tables presented in the main article or appendix.
 These exports are sored in one of three sub-directories in the
 `Results/` folder:
 
--   **`Replication-Estimates/`** \~ contains `.Rdata` files with model
+-   **`Replication-Estimates/`** - contains `.Rdata` files with model
     estimates used to reproduce all tables and figures
--   **`Replication-Figures/`** \~ contains `.png` files of all figure
+-   **`Replication-Figures/`** - contains `.png` files of all figure
     exports
--   **`Published-Models/`** \~ contains compressed `.Rdata` files with
+-   **`Replication-Tables/`** - contains outputs used to create all
+    tables in main article and appendix.
+-   **`Published-Models/`** - contains compressed `.Rdata` files with
     pre-estimated models from executing code in `2-models-spde.R` or
     `3-models-spem.R`
 
@@ -123,66 +144,80 @@ imported - either raw data from `Data/` or estimated quantities from
 the paper the script exports (either a table or figure) as well as where
 that element is stored within the Replication directory.
 
-| Script Name | 0-master.R                                                                                                                            |
-|:------------|:--------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose     | This top-level script contains code to install all packages used in scripts 1-7 as well as code to automate execution of scripts 1-7. |
-| Runtime     |                                                                                                                                       |
+| Script Name | 0-master.R                                                                                                                                   |
+|:------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose     | This top-level script contains code to install all packages used in scripts 1-7 as well as code that automates the execution of scripts 1-7. |
+| Runtime     | 42.6 minutes - total run time for all scripts                                                                                                |
 
-| Script Name  | 1-descriptive.R                                                                                                                                                                   |
-|:-------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Reproduces the descriptive data overview and comparison presented in main paper Section 3.2 including Figures 1 & 2 and Tables 1 & 2. This script also produces Appendix Table 1. |
-| Imports      | `Data/farc_events.Rdata`<br>`Data/colombia.Rdata`<br>`Data/colombia2.Rdata`                                                                                                       |
-| Exports      | `Replication-Figures/figure_main_1.png` - Figure 1<br>`Replication-Figures/figure_main_2.png` - Figure 2                                                                          |
-| Dependencies |                                                                                                                                                                                   |
-| Runtime      |                                                                                                                                                                                   |
+<br>
 
-| Script Name  | 2-models-spde.R                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-|:-------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Reproduces INLA models with SPDEs reported graphically in the main draft as well as in table format in the Appendix.                                                                                                                                                                                                                                                                                                                                                                         |
-| Imports      | `Data/farc_events.Rdata`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Exports      | `Replication-Estimates/parameter-data.Rdata` - All model parameter and HPD estimates<br>`Replication-Estimates/field-data.Rdata` - Projected estimates of Gaussian field mean and SD<br>`Replication-Estimates/range-data.Rdata` - Spatial field decay and range estimates<br>`Replication-Estimates/pred-data.Rdata` - Model predicted outcomes on probability scale<br>`Published-Models/published-models-spde.Rdata` - Compressed INLA model estimates presented in the published article |
-| Dependencies |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Runtime      |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Script Name  | 1-descriptive.R                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|:-------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Reproduces the descriptive data overview and comparison presented in main paper Section 3.2 including Figures 1 & 2 and Tables 1 & 2. This script also produces Appendix Table 1.<br>                                                                                                                                                                                                                                                                                                                               |
+| Imports      | `Data/farc_events.Rdata`<br>`Data/colombia.Rdata`<br>`Data/colombia2.Rdata`<br>                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Exports      | `Replication-Figures/figure_main_1.png` - Figure 1, observed FARC Events map<br>`Replication-Figures/figure_main_2.png` - Figure 2, selected remote and non-remote municipalities map<br>`Replication-Tables/table_main_1.txt` - Table 1, full cross-section confusion matrix<br>`Replication-Tables/table_main_2.txt` - Table 2, selected remote vs. non-remote municipalities confusion matrices<br>`Replication-Tables/table_appendix_1.txt` - Table A1, selected remote and non-remote municipalities table<br> |
+| Dependencies | `dplyr`, `tidyr`, `forcats`, `stringr`, `ggplot2`, `ggrepel`, `sf`, `purrr`, `kableExtra`                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Runtime      | 20 seconds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
-| Script Name  | 3-models-spem.R                                                                                                                                                                                                                                                                                     |
-|:-------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Reproduces discrete spatial probit error models (spem) presented in Appendix Tables A3 and A4 as well as Figure A3 (spem ROC comparison) and Figure A4 (spem predicted probabilities). This script and associated export also provides estimates for non-spatial probits presented in the Appendix. |
-| Imports      | `Data/farc_events.Rdata`                                                                                                                                                                                                                                                                            |
-| Exports      | `Published-Models/published-models-spem.Rdata`<br>`Replication-Figures/figure_appendix_4.png`                                                                                                                                                                                                       |
-| Dependencies |                                                                                                                                                                                                                                                                                                     |
-| Runtime      |                                                                                                                                                                                                                                                                                                     |
+<br>
 
-| Script Name  | 4-figures\_coefplots.R                                                                                                                                                    |
-|:-------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Reproduces Figures 3 and 4 from the main paper which present INLA model parameter estimates and credibility intervals for included regressors as well as GRMF parameters. |
-| Imports      | `Replication-Estimates/parameter-data.Rdata`                                                                                                                              |
-| Exports      | `Replication-Figures/figure_main_3.png` <br>`Replication-Figures/figure_main_4.png`                                                                                       |
-| Dependencies |                                                                                                                                                                           |
-| Runtime      |                                                                                                                                                                           |
+| Script Name  | 2-models-spde.R                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|:-------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Reproduces INLA models with SPDEs reported graphically in the main draft as well as in table format in the Appendix.<br>                                                                                                                                                                                                                                                                                                                                                                         |
+| Imports      | `Data/farc_events.Rdata`<br>                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Exports      | `Replication-Estimates/parameter-data.Rdata` - All model parameter and HPD estimates<br>`Replication-Estimates/field-data.Rdata` - Projected estimates of Gaussian field mean and SD<br>`Replication-Estimates/range-data.Rdata` - Spatial field decay and range estimates<br>`Replication-Estimates/pred-data.Rdata` - Model predicted outcomes on probability scale<br>`Published-Models/published-models-spde.Rdata` - Compressed INLA model estimates presented in the published article<br> |
+| Dependencies | `dplyr`, `tibble`, `INLA`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Runtime      | 27 minutes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
-| Script Name  | 5-figures-ROCs.R                                                                                                                                                                                                                    |
-|:-------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Produces figure 5 which presents ROCs and AUC estimates comparing ICEWS and GED model performance against CINEP ground truth observations.                                                                                          |
-| Imports      | `Data/farc_events.Rdata`<br>`Replication-Estimates/pred-data.Rdata`<br>`Published-Models/published-models-spem.Rdata`                                                                                                               |
-| Exports      | `Replication-Figures/figure_main_5.png`<br>`Replication-Figures/figure_appendix_3.png`<br>`Replication-Figures/figure_appendix_5.png`<br>`Replication-Figures/figure_appendix_6.png`<br>`Replication-Figures/figure_appendix_7.png` |
-| Dependencies |                                                                                                                                                                                                                                     |
-| Runtime      |                                                                                                                                                                                                                                     |
+<br>
 
-| Script Name  | 6-tables.R                                                                                                                                    |
-|:-------------|:----------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Produces Appendix Tables A5-A8 which present INLA GRMF model estimates in table format with median and 95% HPD estimates.                     |
-| Imports      | `parameter-data.Rdata`<br>                                                                                                                    |
-| Exports      | No export. Note: the `custom_table()` function in this script will return LaTex code when evaluated in an RMarkdown document compiled to pdf. |
-| Dependencies |                                                                                                                                               |
-| Runtime      |                                                                                                                                               |
+| Script Name  | 3-models-spem.R                                                                                                                                                                                                                                                                                                                                                           |
+|:-------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Reproduces discrete spatial probit error models (spem) presented in Appendix Tables A3 and A4 as well as Figure A3 (spem ROC comparison) and Figure A4 (spem predicted probabilities). This script and associated export also provides estimates for non-spatial probits presented in the Appendix.<br>                                                                   |
+| Imports      | `Data/farc_events.Rdata`<br>                                                                                                                                                                                                                                                                                                                                              |
+| Exports      | `Published-Models/published-models-spem.Rdata` - Estimated SPEM and non-spatial probit models<br>`Replication-Figures/figure_appendix_4.png` - Figure A4, SPEM mapped predicted outcome probabilities<br>`Replication-Tables/table_appendix_3.txt` - Table A3, Probit (non-spatial) 2002-2009<br>`Replication-Tables/table_appendix_4.txt` - Table A4, SPEM 2002-2009<br> |
+| Dependencies | `dplyr`, `tidyr`, `tibble`, `ggplot2`, `stringr`, `purrr`, `forcats`, `sf`, `ProbitSpatial`, `sandwich`, `spdep`, `kableExtra`                                                                                                                                                                                                                                            |
+| Runtime      | 13 minutes                                                                                                                                                                                                                                                                                                                                                                |
 
-| Script Name  | 7-figures-field\_range-estimates.R                                                                                                                          |
-|:-------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Purpose      | Produces figures related to posterior Gaussian Markov Random Field. Figure 8 - posterior field maps and Figure 9 - Posterior spatial error range and decay. |
-| Imports      | `Replication-Estimates/field-data.Rdata`<br>`Replication-Estimates/range-data.Rdata`<br>`Data/colombia.Rdata`                                               |
-| Exports      | `Replication-Figures/figure_appendix_8.png` - Figure 8<br>`Replication-Figures/figure_appendix_9.png` - Figure 9                                            |
-| Dependencies |                                                                                                                                                             |
-| Runtime      |                                                                                                                                                             |
+<br>
+
+| Script Name  | 4-figures\_coefplots.R                                                                                                                                                                     |
+|:-------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Reproduces Figures 3 and 4 from the main paper which present INLA model parameter estimates and credibility intervals for included regressors as well as GRMF parameters.<br>              |
+| Imports      | `Replication-Estimates/parameter-data.Rdata`<br>                                                                                                                                           |
+| Exports      | `Replication-Figures/figure_main_3.png` - Figure 3, Observed FARC SPDE model estimates<br>`Replication-Figures/figure_main_4.png` - Figure 4, Underreporting FARC SPDE model estimates<br> |
+| Dependencies | `dplyr`, `tidyr`, `stringr`, `forcats`, `ggplot2`, `cowplot`                                                                                                                               |
+| Runtime      | 6 seconds                                                                                                                                                                                  |
+
+<br>
+
+| Script Name  | 5-figures-ROCs.R                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|:-------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Produces figure 5 which presents ROCs and AUC estimates comparing ICEWS and GED model performance against CINEP ground truth observations.<br>                                                                                                                                                                                                                                                                                                                        |
+| Imports      | `Data/farc_events.Rdata`<br>`Replication-Estimates/pred-data.Rdata`<br>`Published-Models/published-models-spem.Rdata`<br>                                                                                                                                                                                                                                                                                                                                             |
+| Exports      | `Replication-Figures/figure_main_5.png` - ROC SPDE (Observed FARC)<br>`Replication-Figures/figure_appendix_3.png` - Figure A3, ROC SPEM (Observed FARC)<br>`Replication-Figures/figure_appendix_5.png` - Figure A4, ROC SPEM (Underreporting FARC)<br>`Replication-Figures/figure_appendix_6.png` - Figure A6, ROC SPDE (Underreporting FARC)<br>`Replication-Figures/figure_appendix_7.png` - Figure A7, ROC SPDE (Observed and Underreporting 2008-2009 period)<br> |
+| Dependencies | `dplyr`, `tidyr`, `ggplot2`, `stringr`, `purrr`, `pROC`, `cowplot`                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Runtime      | 33 seconds                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+<br>
+
+| Script Name  | 6-tables.R                                                                                                                                                                                                                                                                                       |
+|:-------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Produces Appendix Tables A5-A8 which present INLA SPDE model estimates in table format with median and 95% HPD estimates.<br>                                                                                                                                                                    |
+| Imports      | `parameter-data.Rdata`<br>                                                                                                                                                                                                                                                                       |
+| Exports      | `Replication-Tables/table_appendix_5.txt` - Table A5, SPDE 2002-2009<br>`Replication-Tables/table_appendix_6.txt` - Table A6, SPDE 2002-2004<br>`Replication-Tables/table_appendix_7.txt` - Table A7, SPDE 2005-2007<br>`Replication-Tables/table_appendix_8.txt` - Table A8, SPDE 2008-2009<br> |
+| Dependencies | `dplyr`, `tidyr`, `kableExtra`                                                                                                                                                                                                                                                                   |
+| Runtime      | 2 seconds                                                                                                                                                                                                                                                                                        |
+
+<br>
+
+| Script Name  | 7-figures-field\_range-estimates.R                                                                                                                                                                                         |
+|:-------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Purpose      | Produces figures related to posterior Gaussian Markov Random Field. Figure 8 - posterior field maps and Figure 9 - Posterior spatial error range and decay.<br>                                                            |
+| Imports      | `Replication-Estimates/field-data.Rdata`<br>`Replication-Estimates/range-data.Rdata`<br>`Data/colombia.Rdata`<br>                                                                                                          |
+| Exports      | `Replication-Figures/figure_appendix_8.png` - Figure 8, SPDE 2002-2009 model GMRF estimate maps<br>`Replication-Figures/figure_appendix_9.png` - Figure 9, SPDE 2002-2009 model GMRF error correlation range and decay<br> |
+| Dependencies | `INLA`, `sf`, `dplyr`, `tidyr`, `ggplot2`, `purrr`, `raster`, `cowplot`, `scales`                                                                                                                                          |
+| Runtime      | 1.2 minutes                                                                                                                                                                                                                |
 
 <!-- rmarkdown::render("README.rmd", "pdf_document")
 rmarkdown::render("README.rmd", "html_document") -->

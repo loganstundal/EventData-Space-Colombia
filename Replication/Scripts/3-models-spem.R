@@ -32,6 +32,7 @@ rm(list = ls())
 #---------------------------#
 library(dplyr)
 library(tidyr)
+library(tibble)
 library(ggplot2)
 library(stringr)
 library(purrr)
@@ -40,6 +41,7 @@ library(sf)
 library(ProbitSpatial)
 library(sandwich)
 library(spdep)
+library(kableExtra)
 #---------------------------#
 
 #---------------------------#
@@ -52,66 +54,6 @@ load("Data/colombia2.Rdata")
 #---------------------------#
 # Functions
 #---------------------------#
-local_table <- function(coefs   = NULL,
-                        st_errs = NULL,
-                        lliks   = NULL){
-  # ----------------------------------- #
-  # Setup
-  var_names <- names(coefs[[1]])
-  dvs       <- names(coefs)
-  # ----------------------------------- #
-  tidy_vals <- sapply(dvs, function(dv){
-    res <- coefs[[dv]]
-    ses <- st_errs[[dv]]
-    lb <- res - (qnorm(0.975) * ses)
-    ub <- res + (qnorm(0.975) * ses)
-    res <- data.frame("var" = var_names,
-                      "est" = res,
-                      "lb"  = lb,
-                      "ub"  = ub,
-                      "model" = dv) %>%
-      mutate(across(c(est, lb, ub), ~format(round(.x, 3), nsmall = 3))) %>%
-      mutate(hpd = sprintf("[%s, %s]", lb, ub))
-    res  <- res %>% dplyr::select(var, est, hpd, model)
-    post <- data.frame("var" = c("loglik", "n"),
-                       "est" = c(format(round(lliks[[dv]], 3), nsmall = 3),
-                                 "1116"),
-                       "model" = rep(dv, 2))
-    res <- bind_rows(res, post)
-  }, simplify = F)
-  tidy_vals %<>%
-    bind_rows() %>%
-    pivot_longer(cols = c(est, hpd),
-                 values_to = "vals",
-                 names_to  = "ids") %>%
-    pivot_wider(id_cols = c(var, ids),
-                names_from = model,
-                values_from = vals) %>%
-    drop_na()
-  return(tidy_vals)
-}
-
-
-spem_ses <- function(object){
-  # ----------------------------------- #
-  # Description
-  # ----------------------------------- #
-  # Computes standard errors for SpatialProbit class models and returns as
-  # a vector
-  # ----------------------------------- #
-  mycoef    <- object@coeff
-  mod_covar <- ifelse(object@varcov == "varcov", "UC", "UP")
-
-  # Estimate variance covariance matrix
-  lik     <- function (th, env){.Call(paste('lik',object@DGP,mod_covar, sep='_'),
-                                      th, env, PACKAGE = "ProbitSpatial")}
-  H          <- numDeriv::hessian(lik, x = mycoef, env = object@env)
-  spem_vcov  <- abs(solve(H))
-  se         <- sqrt(diag(spem_vcov))
-  return(se)
-}
-
-
 tidy_model <- function(model){
   # ----------------------------------- #
   # Description
@@ -148,8 +90,13 @@ tidy_model <- function(model){
   return(model_results)
 }
 
+
 spem_cut <- function(x){
+  # ----------------------------------- #
+  # Description
+  # ----------------------------------- #
   # Translates spem predicted probabilities into categories for mapping
+  # ----------------------------------- #
   cut(x,
       breaks         = c(0, 0.05, 0.1, 0.2, 0.4, 0.6, Inf),
       include.lowest = TRUE,
@@ -157,6 +104,80 @@ spem_cut <- function(x){
     fct_recode(., "(0.6 +)" = "(0.6,Inf]")
 }
 
+
+spem_ses <- function(object){
+  # ----------------------------------- #
+  # Description
+  # ----------------------------------- #
+  # Computes standard errors for SpatialProbit class models and returns as
+  # a vector
+  # ----------------------------------- #
+  mycoef    <- object@coeff
+  mod_covar <- ifelse(object@varcov == "varcov", "UC", "UP")
+
+  # Estimate variance covariance matrix
+  lik     <- function (th, env){.Call(paste('lik',object@DGP,mod_covar, sep='_'),
+                                      th, env, PACKAGE = "ProbitSpatial")}
+  H          <- numDeriv::hessian(lik, x = mycoef, env = object@env)
+  spem_vcov  <- abs(solve(H))
+  se         <- sqrt(diag(spem_vcov))
+  return(se)
+}
+
+
+local_table <- function(models, caption, model_names = NULL){
+  # ----------------------------------- #
+  # Description
+  # ----------------------------------- #
+  # Takes a probit or spatial probit tidied list (from tidy_model() defined
+  # nearby) and tidies coefficient and credibility interval estimates for a
+  # kable table which is produced and returned
+  # ----------------------------------- #
+  res <- sapply(names(models), function(x){
+    model <- models[[x]]
+    res <- data.frame(
+      "est"   = model[["coefs"]],
+      "ses"   = model[["ses"]],
+      "lb"    = model[["lb"]],
+      "ub"    = model[["ub"]],
+      "model" = x
+    ) %>%
+      rownames_to_column(var = "var") %>%
+      mutate(across(c(est, lb, ub), ~format(round(.x, 3), nsmall = 3))) %>%
+      mutate(hpd = sprintf("[%s, %s]", lb, ub)) %>%
+      dplyr::select(var, est, hpd, model) %>%
+      bind_rows(.,
+                data.frame("var" = c("loglik","n"),
+                           "est" = c(format(round(as.numeric(model["lliks"]), 3),
+                                            nsmall = 3),
+                                     "1116"),
+                           "model" = rep(x, 2)))
+  }, simplify = FALSE)
+
+  tidy_vals <- res %>%
+    bind_rows() %>%
+    pivot_longer(cols = c(est, hpd),
+                 values_to = "vals",
+                 names_to  = "ids") %>%
+    pivot_wider(id_cols = c(var, ids),
+                names_from = model,
+                values_from = vals) %>%
+    drop_na() %>%
+    dplyr::select(-ids)
+
+  if(is.null(model_names)){
+    model_names <- c("", "ICEWS", "GED", "CINEP",
+                     "ICEWS - Underreporing","GED - Underreporting")
+  }
+
+  kbl_table <-  kbl(x         = tidy_vals,
+                    caption   = caption,
+                    format    = "pipe",
+                    escape    = FALSE,
+                    col.names = model_names,
+                    align     = c("l","c","c","c","c","c"))
+  return(kbl_table)
+}
 #---------------------------#
 #-----------------------------------------------------------------------------#
 
@@ -198,10 +219,10 @@ colnames(w) <- rownames(w)
 # ----------------------------------- #
 # Check W and data in same spatial order
 # ----------------------------------- #
-data.frame("head_w" = head(rownames(w)),
-           "head_d" = head(dat$id),
-           "tail_w" = tail(rownames(w)),
-           "tail_d" = tail(dat$id))
+# data.frame("head_w" = head(rownames(w)),
+#            "head_d" = head(dat$id),
+#            "tail_w" = tail(rownames(w)),
+#            "tail_d" = tail(dat$id))
 # ----------------------------------- #
 
 
@@ -271,20 +292,17 @@ probit_sp <- sapply(dvs, function(dv){
 # Figure A4 - SPEM: Predicted Probability Map                             ----
 #-----------------------------------------------------------------------------#
 # ----------------------------------- #
-# Tidy Data
+# Tidy map data
 # ----------------------------------- #
 spem_probs <- sapply(probit_sp[1:3] %>% map("model"), function(x){
   pnorm(predict(x, X = x@X))
 }, simplify = FALSE)
 names(spem_probs) <- paste(names(spem_probs), 'SEM.prob',sep = '.')
 
-# Turn spem_probs into a data frame and join department and municipality
-# variables (all `dat` year-grouping are in same order, so 2002-2009 is the
-# same as the rest). Will use these variables to join to spatial data
-spem_probs        <- as.data.frame(spem_probs) %>%
-  bind_cols(., dat$`2002-2009`[,c("department", "municipality")]) %>%
+# Turn spem_probs into a data frame and join department and municipality vars
+spem_probs <- as.data.frame(spem_probs) %>%
+  bind_cols(spem_probs, dat[,c("department", "municipality")]) %>%
   rename("ICEWS" = 1, "GED" = 2, "CINEP" = 3)
-
 
 # Join predicted probabilities to spatial data and expand longer for
 # facet plot
@@ -334,6 +352,21 @@ ggsave(filename = "Results/Replication-Figures/figure_appendix_4.png",
        units    = "in",
        dpi      = 350)
 # ----------------------------------- #
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# TABLES
+#-----------------------------------------------------------------------------#
+local_table(models  = probit_ns,
+            caption = "Table A.3: Probits: 2002-2009") %>%
+  save_kable("Results/Replication-Tables/table_appendix_3.txt")
+
+
+local_table(models  = probit_sp,
+            caption = "Table A.4: SPEM Models: 2002-2009") %>%
+  save_kable("Results/Replication-Tables/table_appendix_4.txt")
 #-----------------------------------------------------------------------------#
 
 

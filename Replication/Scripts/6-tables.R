@@ -44,22 +44,28 @@ load("Results/Replication-Estimates/parameter-data.Rdata")
 #---------------------------#
 # Local functions
 #---------------------------#
-custom_table <- function(data, cap, footnote = NULL){
-  kbl(x         = data,
-      caption   = cap,
-      escape    = FALSE,
-      col.names = linebreak(c("", "ICEWS", "GED", "CINEP", "ICEWS\nUnderreporing","GED\nUnderreporting"),
-                            align = "c"),
-      align     = c("l","c","c","c","c","c"),
-      position  = "!ht",
-      booktabs  = TRUE) %>%
-    kable_styling(font_size = 10) %>%
-    collapse_rows(columns     = 1,
-                  valign      = "middle",
-                  latex_hline = "none") %>%
-    row_spec(8,  extra_latex_after = "\\cline{1-6}") %>%
-    row_spec(14, extra_latex_after = "\\cline{1-6}") %>%
-    footnote(general = footnote, footnote_as_chunk = T)
+local_table <- function(models, caption, model_names = NULL){
+  # ----------------------------------- #
+  # Description
+  # ----------------------------------- #
+  # Takes model parameter data (exported as `parameter_data` from
+  # 2-models-spde.R) which has been tidied into a formatted data frame (done
+  # below) and produces a table with model parameter estimates and credibility
+  # intervals
+  # ----------------------------------- #
+  if(is.null(model_names)){
+    model_names <- c("", "ICEWS", "GED", "CINEP",
+                     "ICEWS - Underreporing","GED - Underreporting")
+  }
+
+  kbl_table <-  kbl(x         = models,
+                    caption   = caption,
+                    format    = "pipe",
+                    escape    = FALSE,
+                    col.names = model_names,
+                    align     = c("l","c","c","c","c","c"))
+
+  return(kbl_table)
 }
 #---------------------------#
 #-----------------------------------------------------------------------------#
@@ -132,10 +138,7 @@ tab_vals <- bind_rows(tab_vals, lliks_n) %>%
                               variable == "tri"       ~ "TRI",
                               variable == "lliks"     ~ "LogLik",
                               variable == "n"         ~ "N",
-                              TRUE ~ variable)) %>%
-  dplyr::mutate(across(contains(c("icews","ged","cinep")),
-                       ~cell_spec(.x, font_size = ifelse(stringr::str_detect(.x, "\\["), 8, 10))))
-
+                              TRUE ~ variable))
 rm(lliks_n)
 #-----------------------------------------------------------------------------#
 
@@ -144,51 +147,47 @@ rm(lliks_n)
 #-----------------------------------------------------------------------------#
 # CONSTRUCT TABLES                                                        ----
 #-----------------------------------------------------------------------------#
-
-# Note - here custom_table() will output to html format in R-Studio's viewer
-# pane. In an rmarkdown file being compiled to pdf, custom_table() will
-# default to a LateX formatted output.
-
-# Footnote text for all tables:
-fn  <- "Point estimates reflect posterior median, 95% HPD in brackets."
-
 # ----------------------------------- #
 # 2002-2009
 # ----------------------------------- #
-tmp <- tab_vals %>%
+tab_vals %>%
   dplyr::filter(years == "2002-2009") %>%
-  dplyr::select(-years)
-custom_table(data = tmp, cap = "2002-2009", footnote = fn)
+  dplyr::select(-years) %>%
+  local_table(models = ., caption = "Table A.5: SPDE: 2002-2009") %>%
+  save_kable("Results/Replication-Tables/table_appendix_5.txt")
 # ----------------------------------- #
 
 
 # ----------------------------------- #
 # 2002-2004
 # ----------------------------------- #
-tmp <- tab_vals %>%
+tab_vals %>%
   dplyr::filter(years == "2002-2004") %>%
-  dplyr::select(-years)
-custom_table(data = tmp, cap = "2002-2004", footnote = fn)
+  dplyr::select(-years) %>%
+  local_table(models = ., caption = "Table A.6: SPDE: 2002-2004") %>%
+  save_kable("Results/Replication-Tables/table_appendix_6.txt")
 # ----------------------------------- #
 
 
 # ----------------------------------- #
 # 2005-2007
 # ----------------------------------- #
-tmp <- tab_vals %>%
+tab_vals %>%
   dplyr::filter(years == "2005-2007") %>%
-  dplyr::select(-years)
-custom_table(data = tmp, cap = "2005-2007", footnote = fn)
+  dplyr::select(-years) %>%
+  local_table(models = ., caption = "Table A.7: SPDE: 2005-2007") %>%
+  save_kable("Results/Replication-Tables/table_appendix_7.txt")
 # ----------------------------------- #
 
 
 # ----------------------------------- #
 # 2008-2009
 # ----------------------------------- #
-tmp <- tab_vals %>%
+tab_vals %>%
   dplyr::filter(years == "2008-2009") %>%
-  dplyr::select(-years)
-custom_table(data = tmp, cap = "2008-2009", footnote = fn)
+  dplyr::select(-years) %>%
+  local_table(models = ., caption = "Table A.8: SPDE: 2008-2009") %>%
+  save_kable("Results/Replication-Tables/table_appendix_8.txt")
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 

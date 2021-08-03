@@ -504,9 +504,11 @@ save(pred_data, model_colors,
 
 
 # Published models [folder further compressed after save]
-save(inla_mods, spde, mesh_list, stacks, dat, qoi,
-     compress = "xz",
-     file     = "Results/Published-Models/published-models-spde.Rdata")
+# Compression takes time - uncommment the following 3 lines to save
+# model objects:
+# save(inla_mods, spde, mesh_list, stacks, dat, qoi,
+#      compress = "xz",
+#      file     = "Results/Published-Models/published-models-spde.Rdata")
 #-----------------------------------------------------------------------------#
 
 rm(list=ls())
