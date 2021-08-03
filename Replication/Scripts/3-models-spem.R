@@ -375,6 +375,9 @@ local_table(models  = probit_sp,
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
 # Save non-spatial AND spatial probits
+if(!dir.exists("Results/Published-Models"){
+  dir.create("Results/Published-Models")})
+
 save(probit_sp, probit_ns, w,
      file = "Results/Published-Models/published-models-spem.Rdata")
 #-----------------------------------------------------------------------------#

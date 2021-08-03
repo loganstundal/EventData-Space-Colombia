@@ -504,8 +504,11 @@ save(pred_data, model_colors,
 
 
 # Published models [folder further compressed after save]
-# Compression takes time - uncommment the following 3 lines to save
+# Compression takes time - uncommment the following 5 lines to save
 # model objects:
+#
+# if(!dir.exists("Results/Published-Models"){
+#   dir.create("Results/Published-Models")})
 # save(inla_mods, spde, mesh_list, stacks, dat, qoi,
 #      compress = "xz",
 #      file     = "Results/Published-Models/published-models-spde.Rdata")
