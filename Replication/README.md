@@ -2,15 +2,20 @@ Read Me: Replication Directory Overview
 ================
 02 August, 2021
 
+<br>
+
 # README OVERVIEW
 
 |            |                                                                                                                                                                                                    |
 |:-----------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Author     | Logan Stundal, <stund005@umn.edu>                                                                                                                                                                  |
 | Date       | July 26, 2021                                                                                                                                                                                      |
-| Paper      | Human Rights Violations in Space: Assessing the External Validity of Machine Geo-coded Vs. Human Geo-coded Data                                                                                    |
+| Article    | Human Rights Violations in Space: Assessing the External Validity of Machine Geo-coded Vs. Human Geo-coded Data                                                                                    |
+| Journal    | Political Analysis                                                                                                                                                                                 |
 | Co-Authors | Bagozzi, Benjamin; Freeman, John; Holmes, Jennifer                                                                                                                                                 |
 | Purpose    | This document explains script execution order to replicate all results in the paper / appendix as well as produce all figures and tables. Data imports and data exports are noted for each script. |
+
+<br>
 
 ## Directory structure
 
@@ -29,7 +34,11 @@ Read Me: Replication Directory Overview
     repository](https://github.com/loganstundal/EventData-Space-Colombia/tree/main/Replication)  
 -   [Harvard Dataverse]()
 
-# Software
+# Hardware and Software
+
+All models and analysis were conducted using R version 4.0.4
+(2021-02-15) running on a PC using Windows 10 x64 (build 19043) with an
+Intel Core i5-6200U CPU (2.30GHz) and 8Gb of DDR3 memory (1867 MHz).
 
 The primary analysis in this paper was conducted using R-INLA version
 21.02.23 compiled on Feb 22, 2021. The tar.gz installation file for this
@@ -38,12 +47,8 @@ version of INLA is provided here:
 
 -   <https://inla.r-inla-download.org/R/stable/src/contrib/INLA_21.02.23.tar.gz>
 
-These models were estimated with R version 4.0.4 (2021-02-15) running on
-Windows 10 x64 (build 19043) with an Intel Core i5-6200U CPU (2.30GHz)
-and 8Gb of DDR3 memory (1867 MHz).
-
-In addition, the following packages are called in scripts 1-7. Code to
-install these packages is located in `Scripts/0-master.R`.
+The following packages are called in scripts 1-7. Code to install these
+packages is located in `Scripts/0-master.R`.
 
 | Package       | Version  |
 |:--------------|:---------|
@@ -105,8 +110,8 @@ contains three files:
     in maps containing posterior mean, probability, and standard
     deviation estimates of the Gaussian random field.
 -   **`colombia2.Rdata`** - an unprojected simple feature object of
-    level-2 administrative boundaries (Municipalities) used for mapping
-    purposes.
+    Colombia’s level-2 administrative boundaries (Municipalities) used
+    for mapping purposes.
 
 # Replication results
 

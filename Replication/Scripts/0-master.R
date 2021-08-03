@@ -12,12 +12,8 @@
 #
 #-----------------------------------------------------------------------------#
 #
-# Assumptions:
-#
-#  - You have `Rscript` available on your system path environmental variables
-#  - You have opened "0-master.R" from within the "Replication/Scripts"
-#    directory or you have set manually set your working directory to
-#    "Replication/Scripts"
+# Note - this script assumes that you have `Rscript` available in your system
+# path environmental variables
 #
 #-----------------------------------------------------------------------------#
 
@@ -40,11 +36,14 @@
 # ----------------------------------- #
 # Execute replication scripts
 # ----------------------------------- #
-# Set working directory to main "Replication/" directory
-setwd("../")
+# Set working directory to main "Replication/" directory. If you opened this
+# script from the "Scripts/" folder, uncomment and run the following line:
+# setwd("../")
+# Otherwise ensure your working directory is set to "/Replication"
+
 
 # Get file names for scripts 1-7
-target_files <- list.files("Scripts")
+target_files <- list.files("Scripts/")
 target_files <- target_files[grepl("[1-7]", target_files)]
 
 # Create a list to record execution times:
