@@ -1,6 +1,6 @@
 Read Me: Replication Directory Overview
 ================
-02 August, 2021
+03 August, 2021
 
 <br>
 
@@ -15,11 +15,11 @@ Read Me: Replication Directory Overview
 | Co-Authors | Bagozzi, Benjamin; Freeman, John; Holmes, Jennifer                                                                                                                                                 |
 | Purpose    | This document explains script execution order to replicate all results in the paper / appendix as well as produce all figures and tables. Data imports and data exports are noted for each script. |
 
-<br>
-
 ## Directory structure
 
 -   `Data/` - contains original data used as inputs for all models
+    -   `FARC-separate/` - contains separate Rdata files corresponding
+        to period or annual data
 -   `Scripts/` - contains all scripts to reproduce published results
 -   `Results/` - contains folders to store replication script outputs
     -   `Replication-Estimates/` - stores exported estimated quantities
@@ -79,8 +79,9 @@ contains three files:
     the analysis. This file contains an r-object called `dat` which is a
     named list comprising of 4 data frames: `2002-2004`, `2005-2007`,
     `2008-2009`, and `2002-2009` each corresponding to a temporal
-    aggregation of the data implied by the name. These data frames each
-    contain the following variables:
+    aggregation of the data implied by the name. `FARC-separate/`
+    contains these data frames as separate `Rdata` files. These data
+    frames all contain the following variables:
 
 | Variable name            | Description                                                             |
 |:-------------------------|:------------------------------------------------------------------------|
