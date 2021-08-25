@@ -37,6 +37,7 @@ library(ggplot2)
 library(ggrepel)
 library(sf)
 library(purrr)
+library(caret)
 library(kableExtra)
 #---------------------------#
 

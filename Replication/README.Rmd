@@ -118,8 +118,8 @@ The following packages are called in scripts 1-7. Code to install these packages
 
 ```{r, results = "asis"}
 dat <- data.frame(
-  Package = c("cowplot", "dplyr", "forcats", "ggplot2", "ggrepel", "kableExtra", "ProbitSpatial", "pROC", "purrr", "raster", "sandwich", "scales", "sf", "spdep", "stringr", "tibble", "tidyr"),
-  Version = c("1.1.1", "1.0.7", "0.5.1", "3.3.3", "0.9.1", "1.3.4", "1.0", "1.17.0.1", "0.3.4", "3.4.5", "3.0.0", "1.1.1", "0.9.7", "1.1.5", "1.4.0", "3.0.6", "1.1.3")
+  Package = c("caret","cowplot", "dplyr", "forcats", "foreach", "ggplot2", "ggrepel", "kableExtra", "Matrix", "parallel", "ProbitSpatial", "pROC", "purrr", "raster", "sandwich", "scales", "sf", "sp", "spdep", "stringr", "tibble", "tidyr", "viridis"),
+  Version = c("6.0.86","1.1.1", "1.0.7", "0.5.1", "1.5.1", "3.3.3", "0.9.1", "1.3.4","1.3.2", "4.0.4", "1.0", "1.17.0.1", "0.3.4", "3.4.5", "3.0.0", "1.1.1", "0.9.7", "1.4.5","1.1.5", "1.4.0", "3.0.6", "1.1.3", "0.5.1")
 ) %>% 
   local_table(data = ., c1_width = "2in", c2_width = "1in")
 ```
@@ -205,7 +205,7 @@ dat <- bind_rows(
   c(a = "Purpose",      b = "Reproduces the descriptive data overview and comparison presented in main paper Section 3.2 including Figures 1 & 2 and Tables 1 & 2. This script also produces Appendix Table 1.<br>"),
   c(a = "Imports",      b = "`Data/farc_events.Rdata`<br>`Data/colombia.Rdata`<br>`Data/colombia2.Rdata`<br>"),
   c(a = "Exports",      b = "`Replication-Figures/figure_main_1.png` - Figure 1, observed FARC Events map<br>`Replication-Figures/figure_main_2.png` - Figure 2, selected remote and non-remote municipalities map<br>`Replication-Tables/table_main_1.txt` - Table 1, full cross-section confusion matrix<br>`Replication-Tables/table_main_2.txt` - Table 2, selected remote vs. non-remote municipalities confusion matrices<br>`Replication-Tables/table_appendix_1.txt` - Table A1, selected remote and non-remote municipalities table<br>"),
-  c(a = "Dependencies", b = "`dplyr`, `tidyr`, `forcats`, `stringr`, `ggplot2`, `ggrepel`, `sf`, `purrr`, `kableExtra`"),
+  c(a = "Dependencies", b = "`dplyr`, `tidyr`, `forcats`, `stringr`, `ggplot2`, `ggrepel`, `sf`, `purrr`, `kableExtra`, `caret`"),
   c(a = "Runtime",      b = "20 seconds")
 ) %>% 
   local_table(data = ., 
@@ -241,7 +241,7 @@ dat <- bind_rows(
   c(a = "Purpose",      b = "Reproduces discrete spatial probit error models (spem) presented in Appendix Tables A3 and A4 as well as Figure A3 (spem ROC comparison) and Figure A4 (spem predicted probabilities). This script and associated export also provides estimates for non-spatial probits presented in the Appendix.<br>"),
   c(a = "Imports",      b = "`Data/farc_events.Rdata`<br>"),
   c(a = "Exports",      b = "`Published-Models/published-models-spem.Rdata` - Estimated SPEM and non-spatial probit models<br>`Replication-Figures/figure_appendix_4.png` - Figure A4, SPEM mapped predicted outcome probabilities<br>`Replication-Tables/table_appendix_3.txt` - Table A3, Probit (non-spatial) 2002-2009<br>`Replication-Tables/table_appendix_4.txt` - Table A4, SPEM 2002-2009<br>"),
-  c(a = "Dependencies", b = "`dplyr`, `tidyr`, `tibble`, `ggplot2`, `stringr`, `purrr`, `forcats`, `sf`, `ProbitSpatial`, `sandwich`, `spdep`, `kableExtra`"),
+  c(a = "Dependencies", b = "`dplyr`, `tidyr`, `tibble`, `ggplot2`, `stringr`, `purrr`, `forcats`, `sf`, `ProbitSpatial`, `sandwich`, `spdep`, `kableExtra`, `viridis`"),
   c(a = "Runtime",      b = "13 minutes")
 ) %>% 
   local_table(data = ., 

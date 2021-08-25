@@ -42,6 +42,7 @@ library(ProbitSpatial)
 library(sandwich)
 library(spdep)
 library(kableExtra)
+library(viridis)
 #---------------------------#
 
 #---------------------------#

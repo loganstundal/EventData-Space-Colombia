@@ -26,7 +26,11 @@
 #                  repos  = NULL,
 #                  method = "libcurl")
 
-# Install CRAN packages
+# The above command only installs the version of R-INLA used in this analysis.
+# Run the following line to install R-INLA package dependencies:
+# install.packages(c("Matrix", "foreach", "parallel", "sp"))
+
+# Install additional packages used
 # install.packages(c("cowplot","dplyr","forcats","ggplot2","ggrepel","kableExtra",
 #                    "ProbitSpatial","pROC","purrr","raster","sandwich","scales",
 #                    "sf","spdep","stringr","tibble","tidyr"))
